@@ -2,7 +2,12 @@ namespace Serverbound.Compatibility
 {
     internal static class ExpectedBuilds
     {
-        internal const string ImpactfulSkills = "ADE4FD2943A886B9B90C0241CB77EC65A97C1840EF39A906B58BAF3925086706";
+        // 0.21.0 and 0.21.1 have identical owner-skill hook implementations.
+        internal static readonly string[] ImpactfulSkills =
+        {
+            "ADE4FD2943A886B9B90C0241CB77EC65A97C1840EF39A906B58BAF3925086706",
+            "D6E0844F3DADE42B23C33A678EB6E3D6DAA288DCC4187F497B8BB2A1F3CF47BA"
+        };
         // 1.0.16 and 1.0.17 clients; 1.0.17 changes no method these patches hook.
         internal static readonly string[] Valheim =
         {

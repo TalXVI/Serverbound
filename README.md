@@ -34,9 +34,11 @@ The candidate was tested with Windows Valheim 1.0.17. Guards also accept previou
 |---|---|
 | ValheimPerformanceOptimizations | 1.2.3 |
 | ValheimCommunityPatch | 0.34.1 |
-| ImpactfulSkills | 0.21.0 |
-| DeepNorthCompat | 1.2.0 |
+| ImpactfulSkills | 0.21.0, 0.21.1 |
+| DeepNorthCompat | 1.2.0, 1.2.1 |
 | ValheimTune | 0.7.9 |
+
+Use DeepNorthCompat 1.2.1 for its bow and crafting fixes with ImpactfulSkills 0.21.1.
 
 > **Note**: If you're using ImpactfulSkills, this mod also needs to be installed on each client running ImpactfulSkills for it to work properly.
 

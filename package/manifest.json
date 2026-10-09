@@ -1,7 +1,7 @@
 {
   "name": "Serverbound",
   "description": "Dedicated world and AI simulation for Valheim, with optional client support for audited compatibility integrations.",
-  "version_number": "0.1.1",
+  "version_number": "0.1.2",
   "website_url": "https://github.com/TalXVI/Serverbound",
   "dependencies": ["denikson-BepInExPack_Valheim-5.4.2351"]
 }

@@ -13,9 +13,19 @@ internal static class InstallationTests
         test("Serverbound identity is independent and predecessor loading is incompatible", () =>
         {
             var metadata = typeof(Plugin).GetCustomAttribute<BepInEx.BepInPlugin>()!;
-            Check(metadata.GUID == "org.serverbound.valheim" && metadata.Name == "Serverbound" && metadata.Version.ToString() == "0.1.1", "identity");
+            Check(metadata.GUID == "org.serverbound.valheim" && metadata.Name == "Serverbound" && metadata.Version.ToString() == "0.1.2", "identity");
             Check(typeof(Plugin).GetCustomAttribute<BepInEx.BepInIncompatibility>()!.IncompatibilityGUID == CompatibilityInstaller.LegacyGuid, "loader conflict guard");
             Check(!typeof(Plugin).Assembly.GetReferencedAssemblies().Any(a => a.Name == "DeepNorthCompat" || a.Name == "ImpactfulSkills"), "mandatory compatibility dependency");
+        });
+        test("unsupported skill builds install no publisher or XP hooks", () =>
+        {
+            var errors = new List<string>();
+            CompatibilityInstaller.Install(guid => guid == "MidnightsFX.ImpactfulSkills" ? typeof(InstallationTests).Assembly : null,
+                _ => { }, _ => { }, errors.Add);
+            Check(errors.Count == 1 && errors[0].StartsWith("OwnerSkills: NOT APPLIED")
+                && errors[0].Contains("Re-audit required."), string.Join("\n", errors));
+            Check(!Harmony.GetAllPatchedMethods().SelectMany(SimulationPatch.All).Any(p => p.owner == OwnerSkillPatch.Owner),
+                "rejected skill build installed hooks");
         });
         test("basic simulation works without optional mods", () =>
         {

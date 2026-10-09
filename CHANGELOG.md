@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2
+
+- Supports ImpactfulSkills 0.21.1 while retaining support for 0.21.0.
+- Preserves StartupAccelerator's deferred configuration saves when removing obsolete settings.
+
+If you also use DeepNorthCompat, update it to 1.2.1 for its fixes with ImpactfulSkills 0.21.1.
+
 ## 0.1.1
 
 - Removes CharacterGuard and ItemLedger, including character entry restrictions, item tracking and removal, and the `characters` and `allow` console commands.
