@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "dependencies": {
+    ".NETFramework,Version=v4.8": {
+      "BepInEx.AssemblyPublicizer.MSBuild": {
+        "type": "Direct",
+        "requested": "[0.4.1, )",
+        "resolved": "0.4.1",
+        "contentHash": "bbTaXa0CKDuap0vDR+NkSz9crQIYhMvIbId9njUajYZAcr8OTuVcyiSlexzeGxfkYAbbn0z9YpgbIoeyHADXqA=="
+      },
+      "serverbound": {
+        "type": "Project"
+      }
+    },
+    ".NETFramework,Version=v4.8/win7-x86": {}
+  }
+}

@@ -1,4 +1,10 @@
-bin
-/.vs
-obj
+bin/
+obj/
+**/bin/
+**/obj/
+.vs/
+local-audit/
+dist/
+.dotnet-home/
+__pycache__/
 src/Environment.props

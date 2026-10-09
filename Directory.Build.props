@@ -1,0 +1,20 @@
+<Project>
+  <Import Project="$(MSBuildThisFileDirectory)src/Environment.props" Condition="Exists('$(MSBuildThisFileDirectory)src/Environment.props')" />
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <Deterministic>true</Deterministic>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+    <EnableSourceLink>false</EnableSourceLink>
+    <PathMap>$(MSBuildThisFileDirectory)=/_/Serverbound/</PathMap>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+    <TargetFrameworkRootPath Condition="'$(TargetFrameworkRootPath)' == ''">$(UserProfile)\.nuget\packages\microsoft.netframework.referenceassemblies.net48\1.0.3\build\</TargetFrameworkRootPath>
+    <LabPath Condition="'$(SERVERBOUND_MODS_PATH)' != ''">$(SERVERBOUND_MODS_PATH)</LabPath>
+    <ValheimPath Condition="'$(SERVERBOUND_VALHEIM_PATH)' != ''">$(SERVERBOUND_VALHEIM_PATH)</ValheimPath>
+    <ValheimManaged Condition="'$(ValheimManaged)' == '' and Exists('$(ValheimPath)/valheim_server_Data/Managed')">$(ValheimPath)/valheim_server_Data/Managed</ValheimManaged>
+    <ValheimManaged Condition="'$(ValheimManaged)' == ''">$(ValheimPath)/valheim_Data/Managed</ValheimManaged>
+  </PropertyGroup>
+</Project>

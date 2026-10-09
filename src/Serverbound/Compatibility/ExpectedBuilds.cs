@@ -1,0 +1,20 @@
+namespace Serverbound.Compatibility
+{
+    internal static class ExpectedBuilds
+    {
+        internal const string ImpactfulSkills = "ADE4FD2943A886B9B90C0241CB77EC65A97C1840EF39A906B58BAF3925086706";
+        // 1.0.16 and 1.0.17 clients; 1.0.17 changes no method these patches hook.
+        internal static readonly string[] Valheim =
+        {
+            "96CFC004F7F4A6F30D070BEF39EAFD79C466A137121C4665A2F19FB9C15C6127",
+            "25A0A107DCE4D834C44C2B72D0EAFD5CB7793933BDA81816ACCFA1EA9543DACE"
+        };
+        internal static readonly string[] Server =
+        {
+            "7CAB9B49D31EC064591CA80402DD35C566E03B7297CFB7BF4696C38DA4E24D8B",
+            "50035055F9B158A025CACD25E038B603943F7C2A465DA3021707B5F1E44E39FD",
+            "0DFC7E81436F822121148EFED859BA1E661D58B9484BD45E3B6F33B6DD86BFAD",
+            "E7220DC5D9CF9D38270E751352D94918308E59CCA86E56C4BDA0210016C847FA"
+        };
+    }
+}

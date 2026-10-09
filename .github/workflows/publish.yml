@@ -1,0 +1,35 @@
+name: Publish to Thunderstore
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: thunderstore
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Download tested package and provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download "$TAG" --pattern 'Serverbound-*.zip' --pattern candidate.json --pattern SHA256SUMS --dir dist
+      - name: Verify package against tested tagged sources
+        run: python -B scripts/verify-release.py "dist/Serverbound-${TAG#v}.zip" dist/candidate.json --release-tag "$TAG"
+      - name: Upload to Thunderstore
+        env:
+          TCLI_AUTH_TOKEN: ${{ secrets.TCLI_AUTH_TOKEN }}
+        run: python -B scripts/publish-thunderstore.py --release-tag "$TAG"

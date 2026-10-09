@@ -1,183 +1,78 @@
-# Sarkastic.gg Dedicated Simulation
+# Serverbound
 
-> **Fork of [Serverside Simulations](https://github.com/ddormer/valheim-serverside)** by ddormer, which is no longer maintained as of 2026, renamed at the original authors' request. Updated for Valheim 1.0, building on [ddormer/valheim-serverside#118](https://github.com/ddormer/valheim-serverside/pull/118) by @mreastman.
+Serverbound moves Valheim's world and AI simulation onto the dedicated server. Players keep control of their characters and character saves.
 
-The dedicated server simulates the world — monsters, physics, ships without a driver — instead of handing each area to whichever player got there first. **Server-side only: players keep vanilla clients.**
+Full multiplayer testing remains incomplete. Back up worlds before use.
 
-Updated for Valheim **1.0.15**; also runs on 1.0.12.
+## Install
 
-## Why, compared to vanilla
+1. Back up the world and configuration, then stop the server.
+2. Install BepInExPack_Valheim 5.4.2351 and remove predecessor simulation DLLs.
+3. Extract the package into the server directory. The DLL belongs at `BepInEx/plugins/Serverbound/Serverbound.dll`.
+4. Start once to generate `BepInEx/config/org.serverbound.valheim.cfg`. Stop before editing it.
+5. Restart and check `BepInEx/LogOutput.log` for `Simulation: APPLIED`.
 
-In vanilla, the first player to enter an area owns it: their game runs the monster AI and physics there, and everyone else nearby sees that area through them. If that player has a poor connection or a slow PC, everyone around suffers — monsters jump around, hits land late — and updates travel from each player to the server, on to the owner and back.
+Basic simulation accepts vanilla clients. ImpactfulSkills integration also needs Serverbound and the supported skill mod on participating clients. The same DLL supplies the client bridge and never runs dedicated simulation on clients. Clients without the bridge can join, but cannot supply skill bonuses.
 
-With this mod the server owns and simulates those areas:
+## Upgrade
 
-- Each player depends only on their own connection to the server, not on someone else's.
-- Clients no longer run AI and physics for the areas they would have owned, which helps slower PCs.
-- Ships are handed to their driver, so steering has no round trip.
+Remove `Serverside_Simulations.dll`, `Valheim_Serverside.dll`, and `SarkasticGG_Dedicated_Simulation.dll`, including copies in nested plugin folders. Never load a predecessor alongside Serverbound.
 
-What it costs:
+Copy the settings you need from `MVP.Valheim_Serverside_Simulations.cfg` into the new config while stopped. Section and key names are unchanged. Serverbound does not migrate the file automatically.
 
-- The server needs more CPU, RAM and upload than a vanilla server.
-- A player alone in an area now has their round trip to the server where vanilla would have had none. With a nearby server this is rarely noticeable.
+The new assembly and namespace are `Serverbound`; the plugin GUID is `org.serverbound.valheim`. Custom integrations must update old GUID, Harmony-owner, and reflected-type references. Skill RPCs and replicated keys now use the `Serverbound.*` prefix. ImpactfulSkills clients and the server must use matching Serverbound versions. World data and the existing character/item ledger files keep their formats.
 
-### Observed on one server
+## Supported builds
 
-Valheim 1.0.7, Windows dedicated server, up to four players, September 2026. One group's session, not a benchmark.
+The candidate was tested with Windows Valheim 1.0.17. Guards also accept previously audited 1.0.16 and 1.0.17 Windows/Linux dedicated builds and Windows client builds. Those other builds still need native testing with this candidate. Unsupported assembly hashes are rejected.
 
-- No exceptions or mod warnings during play.
-- Items picked up from the ground: 98% of 437 on the first ownership request (1.2.0), 214 of 214 (1.5.0); the rest within 2 s.
-- The per-player send queue was full in at most 0.2% of send ticks, only in bursts such as portals.
-- About 0.8 of a CPU core on average with one player, and 15–25% of a core while empty (with the job worker cap). RAM about 1.6 GB empty, 2–2.6 GB with players, levelling off.
+## Verified supported mods
 
-Not covered yet: Frost Foundry, sailing, raids, Deep North events, a non-default `-simulationdistance`, and the console commands under a Windows server panel.
+| Mod | Verified version |
+|---|---|
+| ValheimPerformanceOptimizations | 1.2.3 |
+| ValheimCommunityPatch | 0.34.1 |
+| ImpactfulSkills | 0.21.0 |
+| DeepNorthCompat | 1.2.0 |
+| ValheimTune | 0.7.9 |
 
-## What this fork adds
+> **Note**: If you're using ImpactfulSkills, this mod also needs to be installed on each client running ImpactfulSkills for it to work properly.
 
-Compared to Serverside Simulations 1.1.9 (details in the [changelog](CHANGELOG.md)):
+## How ownership works
 
-- **Valheim 1.0 support**, and a review of every patched method against the 1.0 code.
-- **Fixes:** location prefabs were never released (a memory leak); zones could be generated before their locations; no objects were created with a non-classic `-simulationdistance`; 1.0 errors on the server with ship sails, the Frost Foundry (which duplicated items) and leviathans; the far ring of unexplored land was not pre-generated as in vanilla, so distant trees, cliffs and the Mistlands mist appeared late.
-- **Objects nearest to a player are created first**, e.g. after a portal.
-- **Server-side networking limits** from BetterNetworking, with a per-player log of how often they are reached.
-- **Cap on Unity job worker threads**, which otherwise idle at CPU cost on many-core hosts.
-- **Fix: player changes that the save skipped.** Valheim 1.0 rewrites only the world chunks it marked as changed, and a change received from a player marks nothing, so what a player just built or moved could be missing after a restart.
-- **Fix: teleported players left behind as ghosts.** A player who portalled or respawned stayed visible to the players near the old spot, frozen, until they next crossed a zone line, because Valheim 1.0 checks whether an object left their area before it stores the new position.
-- **Admin commands on the server console:** `give <item> <amount> <player>`, `broadcast <text>`, `event <name> <player>`, `players`, `characters`, `allow <name>`, `save`, `stop`, typed into the panel the server runs in (AMP), and anything else goes to the game's own console (`kick`, `ban`, `banned`, `stopevent`, `setkey`, `removekey`, and after `devcommands` the cheats that need no player: `skiptime`, `listkeys`, `resetkeys` ...). A vanilla dedicated server never reads its console, and Valheim 1.0 does not let a player on a dedicated server use `spawn` from the game console, admin or not.
-- **Smoother server frames:** world updates reach every player at a steady interval however many are online, one slow frame no longer makes the next one slow through physics catch-up, and new zones are generated one per tick instead of one per exploring player. A periodic log shows frame times and what they are spent on.
-- **`save` and `stop` console commands** for server panels that write to standard input.
-- **Character guard** (off by default): a check on the characters players join with, server-side only, so clients stay vanilla. A character this world has not seen must be fresh, and a known one that comes back changed was played elsewhere -- see below.
-- **Item ledger** (off by default): an account per character of the items that lock progress, what it got here and what it put back into the world; items that came from another world are logged, or taken away -- see below.
-- **Safety:** a startup check warns when a vanilla method the mod replaces has changed in a game update; if the core patches cannot be applied, the mod removes itself and the server runs vanilla.
+The server loads zones and objects around ready players and creates nearby objects first. Areas outside every player's active range can unload. Clients can retain valid ownership leases inside their areas; Serverbound does not continuously seize every object.
 
-## Installation
+Player objects remain client-owned. A ship with a valid driver follows that driver's ownership. An empty ship returns to the server, with an open ship container delaying the handoff.
 
-1. Install [BepInExPack_Valheim](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/) 5.4.2350 or newer on the dedicated server.
-2. Copy `SarkasticGG_Dedicated_Simulation.dll` from the [latest release](https://github.com/MistrCech/valheim-serverside/releases/latest) into `BepInEx/plugins/`.
-3. Back up the world and restart the server. `BepInEx/LogOutput.log` should show `Sarkastic.gg Dedicated Simulation installed` and `Vanilla drift check passed`.
-
-Clients need nothing.
-
-**Upgrading from Serverside Simulations:** delete `Serverside_Simulations.dll`. Both use the same plugin GUID, so only one can load; the config file `MVP.Valheim_Serverside_Simulations.cfg` carries over.
-
-**Do not also run BetterNetworking on the server:** its server-side limits are built in.
+This increases server CPU, memory, and upload needs, especially when players explore separate areas. Remote actions wait for transport and a server frame, so the ownership change can also increase interaction latency.
 
 ## Configuration
 
-`BepInEx/config/MVP.Valheim_Serverside_Simulations.cfg`, read at startup:
+Settings are local, are not synchronized, and require a restart. The generated config describes every key.
 
-| Setting | Default | |
+| Section / key | Default | Effect |
 |---|---|---|
-| `[General] Enabled` | true | Turn the mod off without removing it. |
-| `[MaxObjectsPerFrame] MaxObjects` | 100 | Objects the server creates per frame, 1 to 10000. A vanilla dedicated server creates 100; higher loads areas faster at more CPU, lower fills them in more slowly. |
-| `[Networking] QueueSizeKB` | 48 | Data queued per player before the server holds world updates for that tick (Valheim: 10). 48 KB at 20 ticks/s is about 960 KB/s, just under the send rate cap; above 80 Steam starts failing. |
-| `[Networking] SteamSendRateMinKB` / `MaxKB` | 256 / 1024 | Steam send rate per player, KB/s (Valheim: 150). Keep min × players below the server's upload. |
-| `[Networking] StatsIntervalMinutes` | 5 | How often to log, per player, how often the send queue was full. Near 0% means the limits are not what holds you back. 0 disables. |
-| `[Server] UnityJobWorkers` | 8 | Upper limit on Unity job worker threads (Unity: one per CPU core). Only ever lowers the count; 0 leaves Unity's default. |
-| `[Server] ConsoleCommands` | true | Read commands from standard input: `save`, `stop` (saves first), `players`, `give <item> <amount> <player>` (drops the items in front of that player; the name may be a unique beginning), `broadcast <text>` (a message in the middle of every player's screen), `event <name> <player>` (a raid at that player; `events` lists them), `help`; anything else goes to the game's own console. In AMP this is its console, see the AMP chapter. |
-| `[Server] MaxGiveAmount` | 1000 | Most items one `give` drops. |
-| `[Server] ConsoleInputCodePage` | 1250 | How a console line that is not valid UTF-8 is read (UTF-8 is always tried first): 1250 Central European, 852 Central European DOS, 1252 Western, 65001 UTF-8 only. The log shows the bytes the first time it matters. |
-| `[Performance] SendIntervalMs` | 100 | How often each player gets world updates. Valheim serves one player per frame, so with N players each waits N+1 frames (330 ms at 15 FPS with 4 players). Each send costs server CPU; see the performance log. 0 keeps Valheim's behaviour. |
-| `[Performance] MaxCatchUpMs` | 100 | Longest frame counted in full. After a slow frame Unity reruns physics and every creature's fixed update for each 20 ms missed (Valheim allows 200 ms, 10 times); 100 caps it at 5. Game time runs slightly slow during such frames. 0 keeps the game's setting. |
-| `[Performance] MaxZonesPerTick` | 1 | New zones generated per zone tick (10 per second), players taking turns. 0 = one per player per tick, as before. |
-| `[Performance] ServerTargetFps` | 60 | Frame rate the server aims for (the game sets 30). With time to spare a frame no longer waits 33 ms, so reactions to players halve; under load it changes nothing. 0 keeps 30. |
-| `[Fixes] SaveClientChanges` | true | Count a change that arrives from a player as a change to its world chunk, so the next save writes it. Valheim 1.0 rewrites only changed chunks and skips those. |
-| `[Fixes] TeleportGhosts` | true | Tell the players near the old spot to drop a player who teleported away. Valheim 1.0 checks whether an object left their area before it stores the new position, so the teleported player stayed there for them, frozen, until they next crossed a zone line. |
-| `[Fixes] DungeonLoadGuard` | true | Keep a dungeon whose room bundle fails to load from wedging its zone. When Unity refuses a bundle as already loaded, the game still reports the load as done and then throws, so the dungeon never spawns and its zone stays flagged as loading. The guard uses the bundle Unity already holds, reports a load that really failed as failed, and lets such a dungeon go so it is tried again next time. A vanilla dedicated server never loads dungeons; this mod does. |
-| `[Compat] ValheimCommunityPatchUnload` | false | Only with ValheimCommunityPatch installed. Its zone-diff unload drops objects outside the simulation distance of the server's reference position -- the world origin -- so objects around players are destroyed and created again on every pass. Off: that patch of it is removed when the world starts. On: it is kept, and the object lists are marked as edited on every pass so it takes the game's own unload check. |
-| `[Compat] ValheimCommunityPatchSpawnQueue` | false | Only with ValheimCommunityPatch installed. Its spawn queue orders new objects by distance from the world origin, so this mod's nearest-player ordering never runs. Off: that patch of it is removed when the world starts. On: it is kept. |
-| `[CharacterGuard] Enabled` | false | Check the characters players join with (see Character guard below). |
-| `[CharacterGuard] NewCharacters` | RequireFresh | `RequireFresh`: a character this world has not seen must still be ready for Eikthyr's raid and wear nothing beyond a level 1 workbench. `Allow`: every new character is let in and remembered. |
-| `[CharacterGuard] NewCharacterAction` | Kick | For a new character that is not fresh: `Kick` (after a message on their screen), `Log` or `Ignore`. |
-| `[CharacterGuard] ChangedAway` | Log | For a known character that comes back wearing something new or with other progress: `Log`, `Kick` or `Ignore`. |
-| `[CharacterGuard] ExemptAdmins` | true | Admins are never checked. |
-| `[CharacterGuard] NewCharacterMessage` / `ChangedAwayMessage` | (English text) | Shown in the middle of the player's screen before the kick. |
-| `[ItemLedger] Mode` | Off | `Off`, `LogOnly` or `On`: keep item accounts per character (see Item ledger below); `On` also takes away items that came from another world. |
-| `[ItemLedger] Items` | auto | `auto`: the items that lock progress, from the game's own data (see below). Or item prefab names, comma separated. Items traders sell are always left out. |
-| `[ItemLedger] ExtraItems` / `ExcludeItems` | (empty) | Item prefab names to add to the list, or never to keep accounts of. |
-| `[ItemLedger] LogAllMovements` | false | Also log every movement of a tracked item (and every craft the ledger counts), not only what cannot be accounted for. |
-| `[ItemLedger] ExemptAdmins` | true | Admins get no account and are never checked. |
-| `[ItemLedger] GraceHours` | 168 | For this long after the ledger first runs on a world, no character counts as new: the players who are already around come back with what they had. |
-| `[ItemLedger] Message` / `AltarMessage` | (English text) | Shown in the middle of the player's screen when items are taken away, or a boss altar refuses them. |
-| `[Performance] StatsIntervalMinutes` | 5 | How often to log FPS, frame times, physics steps per frame, the cost of world updates and zone generation, and what the slowest frame was doing, while players are online. 0 disables. |
+| MaxObjectsPerFrame / MaxObjects | 100 | More objects load areas sooner but can lengthen frames. |
+| Performance / MaxZonesPerTick | 1 | Shared new-zone budget across players. Zero removes the limit. |
+| Performance / ServerTargetFps | 60 | Frame target; actual rate depends on CPU headroom. Zero keeps the game's target. |
+| Performance / SendIntervalMs | 100 | World-send interval in milliseconds. Zero keeps existing scheduling. |
+| Performance / MaxCatchUpMs | 100 | Fixed-step catch-up cap. Under load, a cap can slow game time. Zero keeps the engine setting. |
+| Server / UnityJobWorkers | 8 | Worker-count cap. Zero leaves the count alone. |
+| Networking / Enabled | true | Queue and Steam send-rate settings. Disable when another mod owns these. |
+| Networking / QueueSizeKB | 48 | Per-peer queued world data. Larger queues can increase latency. |
 
-## Character guard
+Choose one owner for overlapping networking and simulation settings. Do not copy a pack preset into a standalone installation without checking it. CharacterGuard and ItemLedger are experimental and disabled by default.
 
-Valheim keeps a character on the player's own computer and a vanilla client never sends its inventory to the server, so no server-side mod can read or replace what a character carries. The server does see a character's id (the same on every world), what it wears and holds (both hands, back slots, armour, utility, trinket, with the upgrade level of weapons), and the raids it is ready for, which the game works out from the items the character knows and the bosses it has beaten. The guard uses that:
+## Troubleshooting
 
-- **New characters** -- not in this world's list and without anything built, a bed or a tombstone here -- must be fresh: still ready for Eikthyr's raid (the game stops that once a character knows the antler, bronze or iron pickaxe, hard antler or Eikthyr's trophy) and wearing nothing beyond what a level 1 workbench makes. A character brought in with progress from another world gets a message and is kicked 8 seconds later (`NewCharacterAction`).
-- **Known characters** that come back wearing something they did not have when last seen here, or ready for other raids than then, were played somewhere else in between; that is logged (`ChangedAway`, or kicked). What an online character wears and knows is noted every minute as well as when it leaves, since a server shutdown does not disconnect the players one by one.
-- Characters that built something or own a bed or a tombstone in the world count as known, so switching this on does not lock out existing players. Admins are exempt.
-- `characters` on the console shows how the guard sees who is online; `allow <name>` lets a character in (and one that is waiting for its kick stay). The list is `<world>.characters.txt` next to the world save.
+- `REJECTED BUILD/INSTALLATION`: check game/mod builds against the supported versions and remove predecessor DLLs. Do not bypass guards.
+- `Simulation: SERVERBOUND DISABLED`: fix the reported takeover mismatch and restart. Stop the server if rollback reports hooks still installed.
+- Repeated dungeon loading or distant objects flickering with VCP: check the world-start messages confirming spawn-queue and unload-hook removal.
+- Missing skill state: check that the client has Serverbound, the supported ImpactfulSkills build, and `Compatibility / ClientSkills=true`.
+- Slow loading or delayed interactions: compare frame times, object counts, memory, and send queues. Raising an object budget or queue size can make other delays worse.
 
-What a character carries without wearing it stays invisible to the server: this stops characters being imported with their progress; the item ledger below catches materials brought in by known characters once they reach the world.
+Include the full log, game/mod versions, and reproduction steps in a report.
 
-## Item ledger
+## Attribution
 
-The server never sees a bag, but nearly every way into and out of one passes through an object it does see:
-
-- **In:** picking an item up (the player takes it over and deletes it), taking it out of a chest, cart, ship or tombstone, or off an item stand or armour stand.
-- **Out:** dropping it, putting it into a container or on a stand, feeding it to a smelter, kiln, refinery, cooking station or fermenter, offering it at a boss altar, building with it, dying with it (the tombstone is the whole bag). A drop counts only if the item has been in a bag: the game marks everything in a bag, and what falls out of a destroyed piece, a creature or a rock carries no mark.
-- **Worn:** what a character wears and holds is checked every few seconds; an upgrade shows as a higher quality.
-
-Crafting, upgrading, eating, buying from a trader and what a caught fish brings along are not seen. So a tracked item the character never got here counts as crafted if its recipe can be paid from the tracked items it did get, and the ledger reckons in the player's favour wherever the game leaves room: a craft at a station yields the most the crafting bonus can give (three more per craft for a lucky batch of five), an upgrade may have been made at Valheim 1.0's upgrade station, which takes only upgrader items, an item it held may have broken there and handed part of its materials back, and a caught fish counts in the most its extra drops can bring (a Fish10 one silver). What traders sell is not tracked.
-
-**Which items:** `Items = auto` takes the items that lock progress, from the game's own data: what cannot go through a portal (ores, metals, dragon eggs), what bosses drop and what summons them, every material that all recipes and pieces using it need more than a level 1 workbench for, and every item that all its recipes need more for -- what a forge, cauldron, black forge or galdr table makes, and what goes into it. In Valheim 1.0.16 that is about 530 items; the guard log lists them by reason at startup.
-
-When a character puts more of an item into the world than it ever got here, and could have made, the rest came from somewhere else. That is written to `<world>.guard.log` next to the world save; with `Mode = On` it is also taken away -- a dropped stack is cut down, a container or stand loses it once nobody uses it, a smelter drops it from its queue, a boss altar refuses to summon -- and the player sees a message. What was built with it, put on a cooking station or fermenter, or is worn is only logged.
-
-- A new, fresh character (see Character guard) starts at zero, so its account is exact from the start.
-- For any other character, what it carried when counting began is unknown. Its findings are logged as unverified and never acted on, until its first death here: the tombstone shows the whole bag, and from then on its account is exact.
-- For the first `GraceHours` after the ledger first runs on a world, no character counts as new.
-- The accounts are kept in `<world>.items.txt`.
-- A fault in the ledger or the guard is logged (at most 20 times in a quarter of an hour) and never stops the game's own code. If the accounts or the known characters cannot be read, that feature stays off until the next start and leaves the file as it is.
-
-Start with `LogOnly` for a while and read the guard log before switching to `On`.
-
-## Hosting notes
-
-- **After a game update**, look for `Vanilla ... changed` warnings in the log, and keep world backups.
-- Running under AMP (CubeCoders)? Settings and pitfalls (Sleep mode, stop without save, console commands) are in [MistrCech/amp-valheim-bepinex](https://github.com/MistrCech/amp-valheim-bepinex).
-
-## Caveats
-
-- Only runs on dedicated servers.
-- Uses considerably more server resources than vanilla; a weak CPU or little RAM may make play worse, not better.
-- Disable the mod when using the `optterrain` command.
-- It does not prevent cheating or any kind of client manipulation.
-- Game updates can break it in unexpected ways; back up characters and worlds before updating.
-
-## How it works
-
-Ordinarily, to keep server resource usage low, the Valheim server hands off simulation of an area to the first client that enters it. This mod makes terrain, monsters and other objects that are normally created and owned by clients be created on — and thus owned and simulated by — the server, around every connected player.
-
-#### For mod developers - compatibility
-
-This mod keeps the plugin GUID of Serverside Simulations, `MVP.Valheim_Serverside_Simulations`, so existing checks for it keep working.
-
-If your mod changes the simulation or behaviour of the world, it has to be able to run on the dedicated server:
-- `Player.m_localPlayer` is always `null` on a dedicated server; check for it.
-- On a dedicated server, `ZNet.instance.GetReferencePosition()` returns a position outside of the world, unrelated to any player.
-- Graphics or HUD code should be behind a `ZNet.instance.IsDedicated()` check if it can run on the server.
-
-## Building
-
-Create `src/Environment.props` pointing at a Valheim dedicated server install that has BepInEx:
-
-```
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <!-- Needs to be your path to the base Valheim dedicated server folder -->
-    <VALHEIM_DEDI_INSTALL>E:\SteamLibrary\steamapps\common\Valheim dedicated server</VALHEIM_DEDI_INSTALL>
-  </PropertyGroup>
-</Project>
-```
-
-Then, from the repository root (Windows or Linux, tested with .NET SDK 10):
-
-```
-dotnet build src/Valheim_Serverside/Serverside_Simulations.csproj -c Release -p:SolutionDir=<repository root>/
-```
-
-The DLL ends up in `bin/Release/`. `SolutionDir` is needed when building the project on its own; building `Valheim_Serverside.sln` sets it.
+Serverbound is built on [ddormer's valheim-serverside](https://github.com/ddormer/valheim-serverside) and [MistrCech's maintained fork](https://github.com/MistrCech/valheim-serverside).

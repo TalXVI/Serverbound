@@ -1,6 +1,0 @@
-type: feature
-section: null
-issues: {}
-feature_flags: []
-description: |-
-  Remove `AudioMan.Update`, reducing future error spam
