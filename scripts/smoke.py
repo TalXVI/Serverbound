@@ -17,6 +17,7 @@ def main():
     modes.add_argument("--profile", action="store_true", help="Include audited optional mods and updated DeepNorthCompat.")
     modes.add_argument("--skills", action="store_true", help="Include only ImpactfulSkills; validate the migrated bridge without DeepNorthCompat.")
     modes.add_argument("--vcp", action="store_true", help="Include only VCP; validate the migrated takeover without DeepNorthCompat.")
+    parser.add_argument("--config-seed", type=Path, help="Load an existing Serverbound config in the private test copy.")
     parser.add_argument("--seconds", type=int, default=180)
     args = parser.parse_args()
     require(30 <= args.seconds <= 600, "Startup deadline must be 30 to 600 seconds.")
@@ -66,7 +67,12 @@ def main():
     cfg["Logging.Console"]["Enabled"] = "false"; cfg["Logging.Disk"]["AppendLog"] = "false"
     with settings.open("w", encoding="utf-8") as stream: cfg.write(stream)
     legacy = bepinex / "config/MVP.Valheim_Serverside_Simulations.cfg"
-    if args.profile and legacy.exists(): shutil.copy2(legacy, bepinex / "config/org.serverbound.valheim.cfg")
+    plugin_settings = bepinex / "config/org.serverbound.valheim.cfg"
+    if args.config_seed:
+        require(args.config_seed.is_file(), "Config seed does not exist.")
+        shutil.copy2(args.config_seed, plugin_settings)
+    elif args.profile and legacy.exists(): shutil.copy2(legacy, plugin_settings)
+    initial_config_hash = hashlib.sha256(plugin_settings.read_bytes()).hexdigest() if plugin_settings.exists() else None
     private = runtime / "private-state"; private.mkdir(exist_ok=True)
     env = dict(os.environ, SteamAppId="892970")
     for variable, folder in [("APPDATA","roaming"),("LOCALAPPDATA","local"),("USERPROFILE","home")]:
@@ -105,11 +111,18 @@ def main():
             if process.poll() is None: process.kill(); process.wait(timeout=10)
             if process.stdin: process.stdin.close()
             print(f"Temporary server stopped; exit {process.returncode}", flush=True)
+    saved_config = configparser.ConfigParser(interpolation=None)
+    saved_config.optionxform = str
+    saved_config.read(plugin_settings, encoding="utf-8-sig")
+    config_updated = (saved_config.has_option("General", "Enabled")
+                      and not any(saved_config.has_section(section) for section in ("CharacterGuard", "ItemLedger")))
     result = {"role": runtime.name, "ready": ready, "exitCode": process.returncode,
+              "initialConfigSha256": initial_config_hash, "retiredSettingsRemoved": config_updated,
               "dllSha256": hashlib.sha256((ROOT / "bin/Release/Serverbound.dll").read_bytes()).hexdigest(),
               "runtimeInputs": {path.relative_to(bepinex).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
                                 for path in sorted(bepinex.rglob("*")) if path.is_file() and path.suffix.lower() in (".dll", ".cfg")}}
     (runtime / "result.json").write_text(json.dumps(result,indent=2))
     require(ready and process.returncode == 0, "Startup gate failed. Inspect isolated logs.")
+    require(config_updated, "Serverbound config was not generated or still contains retired settings.")
 
 if __name__ == "__main__": main()

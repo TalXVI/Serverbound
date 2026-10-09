@@ -99,7 +99,9 @@ namespace Serverbound.Settings
 		{
 			// BepInEx saves unbound entries. Bind and remove retired keys so upgrades discard them too.
 			bool saveOnConfigSet = config.SaveOnConfigSet;
-			config.SaveOnConfigSet = false;
+			// Leave an existing deferred-save policy alone. StartupAccelerator cancels its queued
+			// save whenever this setter is called, even when the value does not change.
+			if (saveOnConfigSet) config.SaveOnConfigSet = false;
 			try
 			{
 				RemoveSection("CharacterGuard", new[] { "Enabled", "NewCharacters", "NewCharacterAction", "ChangedAway",
@@ -109,7 +111,7 @@ namespace Serverbound.Settings
 			}
 			finally
 			{
-				config.SaveOnConfigSet = saveOnConfigSet;
+				if (saveOnConfigSet) config.SaveOnConfigSet = true;
 			}
 
 			void RemoveSection(string section, string[] keys)
