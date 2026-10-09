@@ -31,7 +31,7 @@ namespace Serverbound
 	{
 		public const string PluginGUID = "org.serverbound.valheim";
 		public const string PluginName = "Serverbound";
-		public const string PluginVersion = "0.1.0";
+		public const string PluginVersion = "0.1.1";
 
 		private static Plugin context;
 		public static Plugin instance => context;
@@ -99,8 +99,6 @@ namespace Serverbound
 			availableFeatures.AddFeature(new Features.Debugging());
 			availableFeatures.AddFeature(new Features.Compat_ValheimCommunityPatch());
 			availableFeatures.AddFeature(new Features.DungeonLoadGuard());
-			availableFeatures.AddFeature(new Features.CharacterGuard());
-			availableFeatures.AddFeature(new Features.ItemLedger());
 
 			PatchRequirements patchRequirements = new PatchRequirements();
 			patchRequirements.AddRequirement(new PatchRequirement.DebugBuild());
@@ -169,32 +167,6 @@ namespace Serverbound
 			if (installed)
 			{
 				Features.PerformanceStats.Frame();
-				Safely(Features.CharacterGuard.Tick, "Character guard");
-				Safely(Features.ItemLedger.Tick, "Item ledger");
-			}
-		}
-
-		// One feature's fault must not stop the other's tick, nor fill the log every frame.
-		private int tickErrors;
-		private float tickErrorsSince;
-
-		private void Safely(System.Action tick, string feature)
-		{
-			try
-			{
-				tick();
-			}
-			catch (Exception e)
-			{
-				if (Time.realtimeSinceStartup - tickErrorsSince > 900f)
-				{
-					tickErrorsSince = Time.realtimeSinceStartup;
-					tickErrors = 0;
-				}
-				if (tickErrors++ < 20)
-				{
-					Logger.LogWarning($"{feature}: {e}");
-				}
 			}
 		}
 

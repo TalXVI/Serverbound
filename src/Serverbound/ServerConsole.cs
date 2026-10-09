@@ -30,7 +30,7 @@ namespace Serverbound
 	*/
 	public static class ServerConsole
 	{
-		private const string Commands = "save | stop | players | give <item> <amount> <player> | broadcast <text> | event <name> <player> | events | characters | allow <character> | help"
+		private const string Commands = "save | stop | players | give <item> <amount> <player> | broadcast <text> | event <name> <player> | events | help"
 			+ " -- anything else goes to the game console: kick, ban, unban, banned, stopevent, devcommands, skiptime ...";
 
 		private static readonly ConcurrentQueue<string> s_commands = new ConcurrentQueue<string>();
@@ -180,13 +180,6 @@ namespace Serverbound
 						break;
 					case "events":
 						Reply(worldLoaded ? "events: " + AdminCommands.Events() : "no world loaded");
-						break;
-					case "characters":
-						Reply(worldLoaded ? Features.CharacterGuard.Describe() : "no world loaded");
-						break;
-					case "allow":
-						// allow <character name, may contain spaces>: lets in a character the guard turned away
-						Reply(!worldLoaded ? "no world loaded" : words.Length < 2 ? "usage: allow <character>" : Features.CharacterGuard.Allow(string.Join(" ", words, 1, words.Length - 1)));
 						break;
 					case "help":
 						Reply("commands: " + Commands);

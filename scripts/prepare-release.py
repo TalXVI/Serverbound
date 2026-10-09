@@ -5,6 +5,19 @@ import sys
 from candidate import ROOT, verify
 
 
+def release_changes(changelog, version):
+    lines = changelog.splitlines()
+    headings = [index for index, line in enumerate(lines) if line.strip() == "## " + version]
+    if len(headings) != 1:
+        raise RuntimeError("Expected one changelog section for " + version)
+    start = headings[0] + 1
+    end = next((index for index in range(start, len(lines)) if lines[index].startswith("## ")), len(lines))
+    changes = "\n".join(lines[start:end]).strip()
+    if not changes:
+        raise RuntimeError("Empty changelog section for " + version)
+    return changes
+
+
 def main():
     data = verify()
     dist = ROOT / "dist"
@@ -12,12 +25,8 @@ def main():
     archive = dist / provenance["packageFile"]
     subprocess.run([sys.executable, "-B", str(ROOT / "scripts/verify-release.py"),
                     str(archive), str(dist / "candidate.json")], cwd=ROOT, check=True)
-    notes = """Serverbound moves world and AI simulation to the dedicated server. Basic simulation accepts vanilla clients.
-
-- Adds VPO/VCP object-management takeover and the ImpactfulSkills client/server bridge.
-- Fixes late VCP detection and restores vendor hooks on takeover failure.
-- Preserves upstream raid, ready-peer, ship and dungeon fixes.
-- Uses a separate assembly, plugin identity and configuration.
+    changes = release_changes((ROOT / "CHANGELOG.md").read_text(encoding="utf-8"), data["version"])
+    notes = f"""{changes}
 
 Remove predecessor simulation DLLs before installing. ImpactfulSkills participants need matching Serverbound on the client and server. If you use DeepNorthCompat, upgrade it to 1.2.0 before adding Serverbound. Follow the [upgrade instructions](https://github.com/TalXVI/Serverbound#upgrade).
 

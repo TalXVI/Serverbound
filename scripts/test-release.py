@@ -12,6 +12,7 @@ from candidate import ROOT, sha, sources
 validation = runpy.run_path(str(ROOT / "scripts/verify-release.py"))
 verify_archive = validation["verify_archive"]
 DLL_MEMBER = validation["DLL_MEMBER"]
+release_changes = runpy.run_path(str(ROOT / "scripts/prepare-release.py"))["release_changes"]
 
 
 class ReleaseTests(unittest.TestCase):
@@ -112,6 +113,21 @@ class ReleaseTests(unittest.TestCase):
         self.pack()
         with self.assertRaisesRegex(RuntimeError, "Packaged source differs"):
             self.verify()
+
+
+class ReleaseNotesTests(unittest.TestCase):
+    def test_notes_use_only_the_current_version(self):
+        changelog = "# Changelog\n\n## 0.1.1\n\n- Removes restrictions.\n\n## 0.1.0\n\n- Introduces the mod.\n"
+        self.assertEqual(release_changes(changelog, "0.1.1"), "- Removes restrictions.")
+
+    def test_missing_or_duplicate_version_rejected(self):
+        for changelog in ("## 0.1.0\n- Older release.\n", "## 0.1.1\n- First.\n## 0.1.1\n- Second.\n"):
+            with self.subTest(changelog=changelog), self.assertRaisesRegex(RuntimeError, "Expected one changelog section"):
+                release_changes(changelog, "0.1.1")
+
+    def test_empty_version_rejected(self):
+        with self.assertRaisesRegex(RuntimeError, "Empty changelog section"):
+            release_changes("## 0.1.1\n\n## 0.1.0\n- Older release.\n", "0.1.1")
 
 
 if __name__ == "__main__":

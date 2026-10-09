@@ -87,7 +87,7 @@ def record(mods, client, server):
             "inputs": inputs, "offlineTests": evidence, "cleanRebuildIdentical": True,
             "coordinatedDeepNorthCompat": compat_record,
             "nativeStartup": startup, "multiplayerAccepted": False, "performanceMeasured": False,
-            "releaseScope": "Initial 0.1.0 release with incomplete multiplayer and performance acceptance",
+            "releaseScope": "Serverbound " + manifest["version_number"] + " release with incomplete multiplayer and performance acceptance",
             "followUp": ["Multiplayer acceptance matrix", "Extended multiplayer and optional-mod performance acceptance"]}
     gameplay = ROOT / "package/native-gameplay.json"
     if gameplay.is_file():

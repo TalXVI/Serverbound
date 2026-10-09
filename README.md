@@ -20,7 +20,9 @@ Remove `Serverside_Simulations.dll`, `Valheim_Serverside.dll`, and `SarkasticGG_
 
 Copy the settings you need from `MVP.Valheim_Serverside_Simulations.cfg` into the new config while stopped. Section and key names are unchanged. Serverbound does not migrate the file automatically.
 
-The new assembly and namespace are `Serverbound`; the plugin GUID is `org.serverbound.valheim`. Custom integrations must update old GUID, Harmony-owner, and reflected-type references. Skill RPCs and replicated keys now use the `Serverbound.*` prefix. ImpactfulSkills clients and the server must use matching Serverbound versions. World data and the existing character/item ledger files keep their formats.
+CharacterGuard and ItemLedger have been removed. Their config settings are discarded during startup. Their old tracking files beside the world save are no longer used.
+
+The new assembly and namespace are `Serverbound`; the plugin GUID is `org.serverbound.valheim`. Custom integrations must update old GUID, Harmony-owner, and reflected-type references. Skill RPCs and replicated keys now use the `Serverbound.*` prefix. ImpactfulSkills clients and the server must use matching Serverbound versions. World data keeps its format.
 
 ## Supported builds
 
@@ -61,7 +63,7 @@ Settings are local, are not synchronized, and require a restart. The generated c
 | Networking / Enabled | true | Queue and Steam send-rate settings. Disable when another mod owns these. |
 | Networking / QueueSizeKB | 48 | Per-peer queued world data. Larger queues can increase latency. |
 
-Choose one owner for overlapping networking and simulation settings. Do not copy a pack preset into a standalone installation without checking it. CharacterGuard and ItemLedger are experimental and disabled by default.
+Choose one owner for overlapping networking and simulation settings. Do not copy a pack preset into a standalone installation without checking it.
 
 ## Troubleshooting
 

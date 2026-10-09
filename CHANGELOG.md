@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- Removes CharacterGuard and ItemLedger, including character entry restrictions, item tracking and removal, and the `characters` and `allow` console commands.
+- Removes obsolete settings during startup while preserving other configuration values.
+
 ## 0.1.0
 
 - Introduces Serverbound's assembly, plugin GUID, namespaces, configuration file and version series.

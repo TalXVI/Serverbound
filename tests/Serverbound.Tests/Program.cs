@@ -26,6 +26,7 @@ internal static class Program
         try
         {
             InitializePaths();
+            ConfigurationTests.Run(Test);
             InstallationTests.Run(Test);
             if (Environment.GetEnvironmentVariable("SERVERBOUND_TEST_MODE") == "server") RunServer();
             else { SimulationTests.Policy(Test); ClientSimulationTests.Run(Lab, Test); }
