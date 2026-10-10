@@ -62,6 +62,12 @@ def main():
         compat = Path(os.environ["SERVERBOUND_COMPAT_PATH"]).resolve()
         target = plugins / "DeepNorthCompat"; target.mkdir(exist_ok=True)
         shutil.copy2(compat, target / "DeepNorthCompat.dll")
+        if os.environ.get("SERVERBOUND_ODINSHIP_DLL"):
+            odin = Path(os.environ["SERVERBOUND_ODINSHIP_DLL"]).resolve()
+            require(odin.is_file(), "Explicit OdinShip input does not exist.")
+            for old in plugins.rglob("OdinShip.dll"): old.unlink()
+            target = plugins / "OdinShip"; target.mkdir(exist_ok=True)
+            shutil.copy2(odin, target / "OdinShip.dll")
     settings = bepinex / "config/BepInEx.cfg"
     cfg = configparser.ConfigParser(interpolation=None); cfg.optionxform = str; cfg.read(settings, encoding="utf-8-sig")
     cfg["Logging.Console"]["Enabled"] = "false"; cfg["Logging.Disk"]["AppendLog"] = "false"
@@ -87,6 +93,9 @@ def main():
         gates += ["Removed ValheimCommunityPatch's spawn queue", "Removed ValheimCommunityPatch's zone-diff unload"]
     if args.profile:
         gates += ["OwnerSkills: APPLIED", "VPO.Burst: APPLIED", "Removed ValheimCommunityPatch's spawn queue", "Removed ValheimCommunityPatch's zone-diff unload"]
+        if any(plugins.rglob("OdinShip.dll")):
+            gates += ["OdinShip: APPLIED", "OdinShip.Core: APPLIED", "OdinShip.FishPress: APPLIED",
+                      "OdinShip.Input: client-only; inactive on dedicated server."]
     ready = False
     with (runtime / "stdout.log").open("w",encoding="utf-8") as output:
         process = subprocess.Popen(command, cwd=runtime, env=env, stdin=subprocess.PIPE, stdout=output, stderr=subprocess.STDOUT, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
@@ -98,7 +107,7 @@ def main():
                 contents = log.read_text(encoding="utf-8",errors="replace") if log.exists() else ""
                 if all(gate in contents for gate in gates) and "Game server connected" in contents:
                     ready = True; process.stdin.write("save\nstop\n"); process.stdin.flush(); break
-                if "SERVERBOUND DISABLED" in contents or "Serverbound: REJECTED" in contents:
+                if "Simulation: DISABLED" in contents or "Serverbound: REJECTED" in contents:
                     break
                 if any("Could not load [" + name in contents for name in
                        ("Serverbound", "ImpactfulSkills" if args.skills else "ValheimCommunityPatch" if args.vcp else "Serverbound")):

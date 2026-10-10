@@ -64,7 +64,7 @@ namespace Serverbound.Features
 			string group = method == "RemoveObjects" ? "ZoneDiffRemovalPatch" : "SpawnQueueCachePatch";
 			string hookName = method == "RemoveObjects" ? "RemoveObjectsPrefix" : "CreateObjectsSortedPrefix";
 			Assembly vendor = SimulationPatch.VcpAssembly;
-			Guard.Build(vendor, "E48804F2280878B1BB30393C57C354EFDAA68F106A0B2C77F150C113A25EAA68");
+			Guard.Build(vendor, ExpectedBuilds.ValheimCommunityPatch);
 			MethodInfo hook = AccessTools.DeclaredMethod(Guard.Type(vendor, "ValheimCommunityPatch.Patches.Performance." + group), hookName);
 			var registration = SimulationPatch.ExactHook(typeof(ZNetScene), method, hook, PluginId, HarmonyPatchType.Prefix);
 			removed.Add(registration);

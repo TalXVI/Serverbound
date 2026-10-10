@@ -13,7 +13,8 @@ internal static class InstallationTests
         test("Serverbound identity is independent and predecessor loading is incompatible", () =>
         {
             var metadata = typeof(Plugin).GetCustomAttribute<BepInEx.BepInPlugin>()!;
-            Check(metadata.GUID == "org.serverbound.valheim" && metadata.Name == "Serverbound" && metadata.Version.ToString() == "0.1.2", "identity");
+            Check(metadata.GUID == "org.serverbound.valheim" && metadata.Name == "Serverbound" && metadata.Version.ToString() == "0.1.3", "identity");
+            Check(typeof(Plugin).Assembly.GetName().Version == new System.Version(0, 1, 3, 0), "assembly identity");
             Check(typeof(Plugin).GetCustomAttribute<BepInEx.BepInIncompatibility>()!.IncompatibilityGUID == CompatibilityInstaller.LegacyGuid, "loader conflict guard");
             Check(!typeof(Plugin).Assembly.GetReferencedAssemblies().Any(a => a.Name == "DeepNorthCompat" || a.Name == "ImpactfulSkills"), "mandatory compatibility dependency");
         });

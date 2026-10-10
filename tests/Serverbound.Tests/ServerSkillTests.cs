@@ -207,6 +207,22 @@ internal static class ServerSkillTests
                 Check(View(hive).GetZDO().GetBool("IS_BHIVE") == skilled, "hive flag");
             }
         });
+        Case("keeps over-100 levels and the game's clamped Voyaging factor with either upstream cap setting", () =>
+        {
+            Player player = Levels(NewPlayer(159, 0), 0, 0, 150);
+            Skills.SkillType voyager = (Skills.SkillType)AccessTools.Field(impact.GetType("ImpactfulSkills.patches.Voyaging", true), "VoyagingSkill").GetValue(null);
+            Check((float)Call("Level", player, voyager)! == 150f && Factor(player, voyager) == 1f,
+                "status-effect level or the native skill factor changed");
+            if (impact.GetType("ImpactfulSkills.SkillCaps") != null)
+            {
+                foreach (bool pastLevel100 in new[] { false, true })
+                {
+                    Bind("VoyagerBonusesPastLevel100", pastLevel100);
+                    Check((float)Call("FactorWithCap", player, voyager, switches["VoyagerBonusesPastLevel100"])! == 1f,
+                        "upstream cap helper changed the native clamped factor");
+                }
+            }
+        });
         Case("server boat damage reduction uses the most skilled aboard player's replicated level", () =>
         {
             Bind("EnableBoatDamageReduction", true);
@@ -235,6 +251,9 @@ internal static class ServerSkillTests
         foreach (string key in new[] { "EnableAnimalWhisper", "EnableMining", "EnableWoodcutting", "FractionalDropsAsChance", "AnimalHandlingFractionalDropsAsChance", "SkipNonRockDropIncreases" })
             Bind(key, true);
         foreach (string key in new[] { "SkillLevelBonusEnabledForMiningDropChance", "ReducedChanceDropsForLowAmountDrops" }) Bind(key, false);
+        if (impact.GetType("ImpactfulSkills.SkillCaps") != null)
+            foreach (string key in new[] { "AnimalHandlingBonusesPastLevel100", "MiningBonusesPastLevel100", "WoodcuttingBonusesPastLevel100", "VoyagerBonusesPastLevel100" })
+                Bind(key, false);
         foreach (var entry in new[] { ("AnimalTamingSpeedFactor", 3f), ("AnimalTamingSkillGainRate", 1f), ("TamedAnimalLootIncreaseFactor", 1.25f),
             ("AnimalHandlingLootRange", 20f), ("DistanceMiningDropMultiplierChecks", 20f), ("MiningLootFactor", 1.5f), ("WoodCuttingLootFactor", 1.5f) })
             AccessTools.Field(config, entry.Item1).SetValue(null, cfg.Bind("test", entry.Item1, entry.Item2));

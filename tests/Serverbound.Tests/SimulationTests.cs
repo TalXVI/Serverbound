@@ -307,7 +307,7 @@ internal static class SimulationTests
             (source ?? fork).GetType("Serverbound.Features.Core+" + patch, true), "Prefix")));
     }
     // A rejected integration leaves every vendor hook in place and no Serverbound hook except its console capture.
-    private static bool VanillaFallback(string[] before) => errors.Count == 2 && errors[1].StartsWith("Simulation: SERVERBOUND DISABLED")
+    private static bool VanillaFallback(string[] before) => errors.Count == 2 && errors[1].StartsWith("Simulation: DISABLED")
         && before.Where(s => !s.Split(':')[1].StartsWith("org.serverbound.valheim")).SequenceEqual(Snapshot());
     private static void RegisterVendors()
     {

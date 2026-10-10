@@ -3,7 +3,7 @@
     <TargetFramework>net48</TargetFramework>
     <AssemblyName>Serverbound</AssemblyName>
     <RootNamespace>Serverbound</RootNamespace>
-    <Version>0.1.2</Version>
+    <Version>0.1.3</Version>
     <Title>Serverbound</Title>
     <Description>Dedicated world simulation and optional client compatibility for Valheim.</Description>
     <OutputPath>../../bin/$(Configuration)/</OutputPath>

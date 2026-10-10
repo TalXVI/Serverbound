@@ -11,6 +11,8 @@ namespace Serverbound.Compatibility
         internal static Action<string> Warning = _ => { };
         internal static Action<string> Error = _ => { };
         internal const string LegacyGuid = "MVP.Valheim_Serverside_Simulations";
+        private const string OdinShipGuid = "marlthon.OdinShip";
+        private static Func<string, Assembly?>? resolveAssembly;
 
         internal static void CheckInstallation(Func<string, Assembly?> resolve, Func<string, System.Version?> version, bool dedicated = true)
         {
@@ -28,10 +30,17 @@ namespace Serverbound.Compatibility
         }
 
         public static void Install(Func<string, Assembly?> resolve, Action<string> info,
-            Action<string> warning, Action<string> error)
+            Action<string> warning, Action<string> error, bool installOwnerSkills = true)
         {
             Info = info; Warning = warning; Error = error;
+            resolveAssembly = resolve;
+            OdinShipOwnershipPatch.Prepare(resolve(OdinShipGuid));
             SimulationPatch.Prepare(resolve);
+            if (!installOwnerSkills)
+            {
+                Info("OwnerSkills: disabled by client configuration.");
+                return;
+            }
             try { OwnerSkillPatch.Prepare(resolve("MidnightsFX.ImpactfulSkills")); }
             catch (Exception failure)
             {
@@ -42,6 +51,8 @@ namespace Serverbound.Compatibility
 
         public static void Verify()
         {
+            if (resolveAssembly != null) OdinShipOwnershipPatch.Prepare(resolveAssembly(OdinShipGuid));
+            OdinShipOwnershipPatch.Verify();
             SimulationPatch.Verify();
             OwnerSkillPatch.Verify();
         }

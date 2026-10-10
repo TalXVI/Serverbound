@@ -25,13 +25,14 @@ namespace Serverbound
 	[BepInDependency("dev.ontrigger.vpo", BepInDependency.DependencyFlags.SoftDependency)]
 	[BepInDependency("MidnightsFX.ValheimCommunityPatch", BepInDependency.DependencyFlags.SoftDependency)]
 	[BepInDependency("DeepNorthCompat", BepInDependency.DependencyFlags.SoftDependency)]
+	[BepInDependency("marlthon.OdinShip", BepInDependency.DependencyFlags.SoftDependency)]
 	[BepInIncompatibility(CompatibilityInstaller.LegacyGuid)]
 
 	public class Plugin : BaseUnityPlugin
 	{
 		public const string PluginGUID = "org.serverbound.valheim";
 		public const string PluginName = "Serverbound";
-		public const string PluginVersion = "0.1.2";
+		public const string PluginVersion = "0.1.3";
 
 		private static Plugin context;
 		public static Plugin instance => context;
@@ -71,9 +72,10 @@ namespace Serverbound
 			}
 			else if (!IsDedicated())
 			{
-				if (Config.Bind("Compatibility", "ClientSkills", true,
-					"Publish ImpactfulSkills state only after a Serverbound server handshake. Dedicated simulation never runs on clients.").Value)
-					CompatibilityInstaller.Install(Resolve, CompatibilityInstaller.Info, CompatibilityInstaller.Warning, CompatibilityInstaller.Error);
+				bool clientSkills = Config.Bind("Compatibility", "ClientSkills", true,
+					"Publish ImpactfulSkills state only after a Serverbound server handshake. Dedicated simulation never runs on clients.").Value;
+				CompatibilityInstaller.Install(Resolve, CompatibilityInstaller.Info, CompatibilityInstaller.Warning,
+					CompatibilityInstaller.Error, clientSkills);
 				Logger.LogInfo("Serverbound client compatibility loaded; dedicated simulation is inactive on this client.");
 				return;
 			}
@@ -145,7 +147,7 @@ namespace Serverbound
 				if (Harmony.GetAllPatchedMethods().SelectMany(SimulationPatch.All).Any(p => IsSimulationOwner(p.owner)))
 					throw new InvalidOperationException("Serverbound hooks remain installed.");
 				SimulationPatch.RestoreVendors();
-				CompatibilityInstaller.Error("Simulation: SERVERBOUND DISABLED; resolve the rejected integration before admitting players.");
+				CompatibilityInstaller.Error("Simulation: DISABLED; resolve the rejected integration before admitting players.");
 			}
 			catch (Exception error)
 			{
@@ -153,13 +155,14 @@ namespace Serverbound
 			}
 		}
 		private static bool IsSimulationOwner(string owner) => (owner == PluginGUID || owner.StartsWith(PluginGUID + ".", StringComparison.Ordinal))
-			&& owner != PluginGUID + ".ServerConsole";
+			&& owner != PluginGUID + ".ServerConsole" && owner != OdinShipOwnershipPatch.Owner;
 
 		private static bool consoleStarted;
 		private static bool installed;
 
 		private void Update()
 		{
+			OdinShipOwnershipPatch.Update();
 			if (consoleStarted)
 			{
 				ServerConsole.ProcessPending();

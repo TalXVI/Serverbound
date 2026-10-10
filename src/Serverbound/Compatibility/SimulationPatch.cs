@@ -15,7 +15,6 @@ namespace Serverbound.Compatibility
         private const string VpoGuid = "dev.ontrigger.vpo";
         private const string VcpGuid = "MidnightsFX.ValheimCommunityPatch";
         private const string VpoHash = "614CD643343E2E2D182BA4B50AA8C96D8FEDB8E09A16C6AA0018BAD222D6EE70";
-        private const string VcpHash = "E48804F2280878B1BB30393C57C354EFDAA68F106A0B2C77F150C113A25EAA68";
         private static Assembly? vpo, vcp;
         private static readonly List<(MethodBase Target, Patch Hook, HarmonyPatchType Kind)> takenOver = new List<(MethodBase, Patch, HarmonyPatchType)>();
         private static bool pending;
@@ -88,7 +87,7 @@ namespace Serverbound.Compatibility
                 }
                 if (vcp != null)
                 {
-                    Guard.Build(vcp, VcpHash);
+                    Guard.Build(vcp, ExpectedBuilds.ValheimCommunityPatch);
                     Type group = Guard.Type(vcp, "ValheimCommunityPatch.Patches.Performance.SceneIdleSkipPatch");
                     hooks.Add(ExactHook(typeof(ZNetScene), "CreateDestroyObjects", AccessTools.DeclaredMethod(group, "CreateDestroyObjectsPrefix"), VcpGuid, HarmonyPatchType.Prefix));
                     hooks.Add(ExactHook(typeof(ZNetScene), "CreateDestroyObjects", AccessTools.DeclaredMethod(group, "CreateDestroyObjectsPostfix"), VcpGuid, HarmonyPatchType.Postfix));

@@ -30,6 +30,7 @@ internal static class Program
             InstallationTests.Run(Test);
             if (Environment.GetEnvironmentVariable("SERVERBOUND_TEST_MODE") == "server") RunServer();
             else { SimulationTests.Policy(Test); ClientSimulationTests.Run(Lab, Test); }
+            OdinShipTests.Run(Lab, Test);
             SysConsole.WriteLine($"PASS: {passed} test cases"); return 0;
         }
         catch (Exception exception) { SysConsole.Error.WriteLine(exception); return 1; }

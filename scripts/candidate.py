@@ -39,6 +39,12 @@ def record(mods, client, server):
         inputs[filename] = sha(matches[0].read_bytes())
     inputs["ValheimTune.dll"] = sha((Path(os.environ["SERVERBOUND_VENDOR_PATH"]) / "tune.dll").read_bytes())
     inputs["DeepNorthCompat.dll"] = sha(Path(os.environ["SERVERBOUND_COMPAT_PATH"]).read_bytes())
+    odin = os.environ.get("SERVERBOUND_ODINSHIP_DLL")
+    odin_matches = [Path(odin)] if odin else list((mods / "BepInEx/plugins").rglob("OdinShip.dll"))
+    if len(odin_matches) > 1:
+        raise RuntimeError("Expected at most one audited OdinShip input.")
+    if odin_matches:
+        inputs["OdinShip.dll"] = sha(odin_matches[0].read_bytes())
     compat_root = Path(os.environ.get("SERVERBOUND_COMPAT_REPO", ROOT.parent / "DeepNorthCompat"))
     compat_record = json.loads((compat_root / "package/validated-build.json").read_text())
     if compat_record["sha256"] != inputs["DeepNorthCompat.dll"]:
@@ -75,6 +81,10 @@ def record(mods, client, server):
             captured = list((runtime / "BepInEx/plugins").rglob(filename))
             if len(captured) != 1 or sha(captured[0].read_bytes()) != inputs[filename]:
                 raise RuntimeError("Native startup used different optional inputs: " + role + "/" + filename)
+        if role == "smoke-profile" and "OdinShip.dll" in inputs:
+            captured = list((runtime / "BepInEx/plugins").rglob("OdinShip.dll"))
+            if len(captured) != 1 or sha(captured[0].read_bytes()) != inputs["OdinShip.dll"]:
+                raise RuntimeError("Native startup used a different OdinShip input.")
         result["logSha256"] = sha((runtime / "BepInEx/LogOutput.log").read_bytes())
         startup.append(result)
     manifest = json.loads((ROOT / "package/manifest.json").read_text())

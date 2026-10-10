@@ -35,6 +35,8 @@ namespace Serverbound.Compatibility
         private static float nextHello;
         private static FieldInfo view = null!, animalSkill = null!, animalRange = null!, animalEnabled = null!, miningEnabled = null!, woodEnabled = null!, voyagingSkill = null!;
         private static MethodInfo treeBonus = null!;
+        private static MethodInfo? bonusFactorRead;
+        private static Func<float, ConfigEntry<bool>, float>? capFactor;
         [ThreadStatic] private static Player? current;
         
         private static readonly FieldInfo shipPlayers = AccessTools.Field(typeof(Ship), "m_players");
@@ -51,6 +53,7 @@ namespace Serverbound.Compatibility
         internal static void Prepare(Assembly? skills)
         {
             prepared = false; installed = false; impact = null;
+            bonusFactorRead = null; capFactor = null;
             if (skills == null)
             {
                 CompatibilityInstaller.Info("OwnerSkills: optional mod absent; inactive.");
@@ -73,6 +76,13 @@ namespace Serverbound.Compatibility
             woodEnabled = AccessTools.Field(Guard.Type(skills, "ImpactfulSkills.ValConfig"), "EnableWoodcutting");
             voyagingSkill = AccessTools.Field(Guard.Type(skills, "ImpactfulSkills.patches.Voyaging"), "VoyagingSkill");
             treeBonus = Guard.Method(Guard.Type(skills, "ImpactfulSkills.patches.Woodcutting"), "IncreaseTreeDrops", typeof(void), typeof(TreeBase));
+            Type? caps = skills.GetType("ImpactfulSkills.SkillCaps");
+            if (caps != null)
+            {
+                bonusFactorRead = Guard.Method(caps, "GetBonusSkillFactor", typeof(float), typeof(Character), typeof(Skills.SkillType), typeof(ConfigEntry<bool>));
+                MethodInfo cap = Guard.Method(caps, "BonusFactor", typeof(float), typeof(float), typeof(ConfigEntry<bool>));
+                capFactor = (Func<float, ConfigEntry<bool>, float>)Delegate.CreateDelegate(typeof(Func<float, ConfigEntry<bool>, float>), cap);
+            }
             var harmony = new Harmony(Owner);
             harmony.Patch(Guard.Method(typeof(Player), "SetLocalPlayer", typeof(void)), postfix: Guard.Hook(typeof(OwnerSkillPatch), nameof(Publish)));
             harmony.Patch(Guard.Method(typeof(Player), "FixedUpdate", typeof(void)), postfix: Guard.Hook(typeof(OwnerSkillPatch), nameof(PublishPeriodic)));
@@ -250,6 +260,9 @@ namespace Serverbound.Compatibility
             return SkillState.RequireLevel(zdo.GetInt(ProtocolKey), zdo.GetFloat(LevelKey(skill), float.NaN));
         }
 
+        private static float FactorWithCap(Character player, Skills.SkillType skill, ConfigEntry<bool> pastLevel100)
+            => capFactor!(Factor(player, skill), pastLevel100);
+
         private static void Raise(Character player, Skills.SkillType skill, float amount)
         {
             if (!Enabled) { player.RaiseSkill(skill, amount); return; }
@@ -302,6 +315,8 @@ namespace Serverbound.Compatibility
                 if (code.opcode == OpCodes.Ldsfld && Equals(code.operand, local))
                 { code.opcode = OpCodes.Call; code.operand = AccessTools.Method(typeof(OwnerSkillPatch), nameof(Actor)); }
                 else if (code.Calls(factor)) { code.opcode = OpCodes.Call; code.operand = AccessTools.Method(typeof(OwnerSkillPatch), nameof(Factor)); }
+                else if (bonusFactorRead != null && code.Calls(bonusFactorRead))
+                { code.opcode = OpCodes.Call; code.operand = AccessTools.Method(typeof(OwnerSkillPatch), nameof(FactorWithCap)); }
                 else if (code.Calls(level)) { code.opcode = OpCodes.Call; code.operand = AccessTools.Method(typeof(OwnerSkillPatch), nameof(Level)); }
                 else if (code.Calls(raise)) { code.opcode = OpCodes.Call; code.operand = AccessTools.Method(typeof(OwnerSkillPatch), nameof(Raise)); }
                 else if (code.Calls(coroutine)) { code.opcode = OpCodes.Call; code.operand = AccessTools.Method(typeof(OwnerSkillPatch), nameof(RunCoroutine)); }

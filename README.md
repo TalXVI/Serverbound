@@ -2,8 +2,6 @@
 
 Serverbound moves Valheim's world and AI simulation onto the dedicated server. Players keep control of their characters and character saves.
 
-Full multiplayer testing remains incomplete. Back up worlds before use.
-
 ## Install
 
 1. Back up the world and configuration, then stop the server.
@@ -26,21 +24,26 @@ The new assembly and namespace are `Serverbound`; the plugin GUID is `org.server
 
 ## Supported builds
 
-The candidate was tested with Windows Valheim 1.0.17. Guards also accept previously audited 1.0.16 and 1.0.17 Windows/Linux dedicated builds and Windows client builds. Those other builds still need native testing with this candidate. Unsupported assembly hashes are rejected.
+Serverbound accepts audited Valheim 1.0.16 and 1.0.17 Windows client and Windows/Linux dedicated assemblies. It rejects unsupported assembly hashes.
 
 ## Verified supported mods
 
 | Mod | Verified version |
 |---|---|
 | ValheimPerformanceOptimizations | 1.2.3 |
-| ValheimCommunityPatch | 0.34.1 |
-| ImpactfulSkills | 0.21.0, 0.21.1 |
-| DeepNorthCompat | 1.2.0, 1.2.1 |
+| ValheimCommunityPatch | 0.34.1, 0.35.0 |
+| ImpactfulSkills | 0.21.0, 0.21.1, 0.21.3 |
 | ValheimTune | 0.7.9 |
 
-Use DeepNorthCompat 1.2.1 for its bow and crafting fixes with ImpactfulSkills 0.21.1.
-
 > **Note**: If you're using ImpactfulSkills, this mod also needs to be installed on each client running ImpactfulSkills for it to work properly.
+
+### OdinShip
+
+Serverbound integrates with the audited OdinShip 0.8.7 build. Install Serverbound and that OdinShip build on the requesting client and the current ship owner, including the dedicated server when it owns the ship. Check for `OdinShip: APPLIED` in the log.
+
+Nearby clients can request customization and turret-mode changes from the current ship owner. Request range is 8 m from ship controls for customization and rename, or from a ship turret for mode changes. The owner checks access before applying rename and routed requests. Direct owner customization and turret writes retain OdinShip's permissions. Requests do not transfer ship ownership.
+
+Rename requests report acceptance or rejection, including submissions by the owner. Requests time out visibly after five seconds without a response. The OdinShip integration remains active if simulation rolls back.
 
 ## How ownership works
 
@@ -70,7 +73,7 @@ Choose one owner for overlapping networking and simulation settings. Do not copy
 ## Troubleshooting
 
 - `REJECTED BUILD/INSTALLATION`: check game/mod builds against the supported versions and remove predecessor DLLs. Do not bypass guards.
-- `Simulation: SERVERBOUND DISABLED`: fix the reported takeover mismatch and restart. Stop the server if rollback reports hooks still installed.
+- `Simulation: DISABLED`: fix the reported takeover mismatch and restart. Stop the server if rollback reports hooks still installed.
 - Repeated dungeon loading or distant objects flickering with VCP: check the world-start messages confirming spawn-queue and unload-hook removal.
 - Missing skill state: check that the client has Serverbound, the supported ImpactfulSkills build, and `Compatibility / ClientSkills=true`.
 - Slow loading or delayed interactions: compare frame times, object counts, memory, and send queues. Raising an object budget or queue size can make other delays worse.

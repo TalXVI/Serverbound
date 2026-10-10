@@ -28,7 +28,7 @@ def main():
     changes = release_changes((ROOT / "CHANGELOG.md").read_text(encoding="utf-8"), data["version"])
     notes = f"""{changes}
 
-Remove predecessor simulation DLLs before installing. ImpactfulSkills participants need matching Serverbound on the client and server. If you use DeepNorthCompat, upgrade it to 1.2.0 before adding Serverbound. Follow the [upgrade instructions](https://github.com/TalXVI/Serverbound#upgrade).
+Remove predecessor simulation DLLs before installing. ImpactfulSkills participants need matching Serverbound on the client and server. Follow the [upgrade instructions](https://github.com/TalXVI/Serverbound#upgrade).
 
 The attached ZIP contains the tested DLL. candidate.json records source, dependency and artifact hashes and validation evidence. SHA256SUMS records the package and DLL hashes.
 """
