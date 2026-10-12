@@ -31,8 +31,8 @@ Serverbound accepts audited Valheim 1.0.16 and 1.0.17 Windows client and Windows
 | Mod | Verified version |
 |---|---|
 | ValheimPerformanceOptimizations | 1.2.3 |
-| ValheimCommunityPatch | 0.34.1, 0.35.0 |
-| ImpactfulSkills | 0.21.0, 0.21.1, 0.21.3 |
+| ValheimCommunityPatch | 0.34.1, 0.35.0, 0.35.1 |
+| ImpactfulSkills | 0.21.0, 0.21.1, 0.21.3, 0.22.0, 0.22.1 |
 | ValheimTune | 0.7.9 |
 
 > **Note**: If you're using ImpactfulSkills, this mod also needs to be installed on each client running ImpactfulSkills for it to work properly.

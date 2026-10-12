@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+
+- Supports ImpactfulSkills 0.22.0 and 0.22.1, plus ValheimCommunityPatch 0.35.1. Previously supported builds remain accepted.
+
 ## 0.1.3
 
 - Adds optional owner-routed customization and turret-mode requests for the audited OdinShip 0.8.7 build.

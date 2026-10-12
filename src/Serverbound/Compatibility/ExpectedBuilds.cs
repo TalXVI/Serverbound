@@ -2,17 +2,20 @@ namespace Serverbound.Compatibility
 {
     internal static class ExpectedBuilds
     {
-        // 0.21.0/0.21.1 use direct skill reads; 0.21.3 adds guarded cap helpers.
+        // 0.21.0/0.21.1 use direct reads; 0.21.3/0.22.x share the guarded cap helpers.
         internal static readonly string[] ImpactfulSkills =
         {
             "ADE4FD2943A886B9B90C0241CB77EC65A97C1840EF39A906B58BAF3925086706",
             "D6E0844F3DADE42B23C33A678EB6E3D6DAA288DCC4187F497B8BB2A1F3CF47BA",
-            "52DB5951ADDA57426706A58C9F7C530DFD7519A3E987C73516992111588EF656"
+            "52DB5951ADDA57426706A58C9F7C530DFD7519A3E987C73516992111588EF656",
+            "E74CDE9D2F5EC13DE46A301F4FCE2FB0F66932C234A5E8E6F685FB18D454E6D9",
+            "79345A447506C6AE8D13A36DA8FD1FCDCBD965C5DA110B3953B8EA9517F7889D"
         };
         internal static readonly string[] ValheimCommunityPatch =
         {
             "E48804F2280878B1BB30393C57C354EFDAA68F106A0B2C77F150C113A25EAA68",
-            "DF171F6A25C8AEB325F98EBDDD29088A0FF6EE7B5F9EDC88E9E6F5F63E3A9014"
+            "DF171F6A25C8AEB325F98EBDDD29088A0FF6EE7B5F9EDC88E9E6F5F63E3A9014",
+            "4C8722F02C374F6B51D7C5C6FADAA020710587B2F1A9DFB3918EA7B0EAD372C6"
         };
         // 1.0.16 and 1.0.17 clients; 1.0.17 changes no method these patches hook.
         internal static readonly string[] Valheim =
