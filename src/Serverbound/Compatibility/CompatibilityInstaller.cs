@@ -30,12 +30,13 @@ namespace Serverbound.Compatibility
         }
 
         public static void Install(Func<string, Assembly?> resolve, Action<string> info,
-            Action<string> warning, Action<string> error, bool installOwnerSkills = true)
+            Action<string> warning, Action<string> error, bool installOwnerSkills = true, bool dedicated = false)
         {
             Info = info; Warning = warning; Error = error;
             resolveAssembly = resolve;
             OdinShipOwnershipPatch.Prepare(resolve(OdinShipGuid));
             SimulationPatch.Prepare(resolve);
+            TerrainLimitsPatch.Prepare(resolve, dedicated);
             if (!installOwnerSkills)
             {
                 Info("OwnerSkills: disabled by client configuration.");
@@ -53,6 +54,7 @@ namespace Serverbound.Compatibility
         {
             if (resolveAssembly != null) OdinShipOwnershipPatch.Prepare(resolveAssembly(OdinShipGuid));
             OdinShipOwnershipPatch.Verify();
+            TerrainLimitsPatch.Verify();
             SimulationPatch.Verify();
             OwnerSkillPatch.Verify();
         }

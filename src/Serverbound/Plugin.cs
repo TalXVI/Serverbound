@@ -32,7 +32,7 @@ namespace Serverbound
 	{
 		public const string PluginGUID = "org.serverbound.valheim";
 		public const string PluginName = "Serverbound";
-		public const string PluginVersion = "0.1.4";
+		public const string PluginVersion = "0.1.5";
 
 		private static Plugin context;
 		public static Plugin instance => context;
@@ -112,7 +112,8 @@ namespace Serverbound
 
 			VanillaDrift.Check(Logger);
 			installed = true;
-			CompatibilityInstaller.Install(Resolve, CompatibilityInstaller.Info, CompatibilityInstaller.Warning, CompatibilityInstaller.Error);
+			CompatibilityInstaller.Install(Resolve, CompatibilityInstaller.Info, CompatibilityInstaller.Warning, CompatibilityInstaller.Error,
+				dedicated: true);
 			Logger.LogInfo($"{PluginName} installed; deferred compatibility verification pending.");
 		}
 
@@ -155,7 +156,8 @@ namespace Serverbound
 			}
 		}
 		private static bool IsSimulationOwner(string owner) => (owner == PluginGUID || owner.StartsWith(PluginGUID + ".", StringComparison.Ordinal))
-			&& owner != PluginGUID + ".ServerConsole" && owner != OdinShipOwnershipPatch.Owner;
+			&& owner != PluginGUID + ".ServerConsole" && owner != OdinShipOwnershipPatch.Owner
+			&& owner != TerrainLimitsPatch.Owner;
 
 		private static bool consoleStarted;
 		private static bool installed;

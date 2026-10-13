@@ -36,5 +36,11 @@ namespace Serverbound.Compatibility
         {
             "5D5817BC169677DB49CAE55986B3F6A178AB3BF0B1D681A2ABA4ECC5DAC067D0"
         };
+
+        // Heightmap Unlimited JvL 2.0.2; registers no terrain patch on headless processes.
+        internal static readonly string[] HeightmapUnlimited =
+        {
+            "F7C2C869CA3CAE30309D657984197B700C9E541C6C18D264AE8E422A9969D4A9"
+        };
     }
 }

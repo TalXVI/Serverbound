@@ -96,6 +96,8 @@ def main():
         if any(plugins.rglob("OdinShip.dll")):
             gates += ["OdinShip: APPLIED", "OdinShip.Core: APPLIED", "OdinShip.FishPress: APPLIED",
                       "OdinShip.Input: client-only; inactive on dedicated server."]
+        if any(plugins.rglob("Digitalroot.HeightmapUnlimitedJvL.dll")):
+            gates += ["TerrainLimits: APPLIED"]
     ready = False
     with (runtime / "stdout.log").open("w",encoding="utf-8") as output:
         process = subprocess.Popen(command, cwd=runtime, env=env, stdin=subprocess.PIPE, stdout=output, stderr=subprocess.STDOUT, text=True, creationflags=subprocess.CREATE_NO_WINDOW)

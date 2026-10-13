@@ -34,6 +34,7 @@ Serverbound accepts audited Valheim 1.0.16 and 1.0.17 Windows client and Windows
 | ValheimCommunityPatch | 0.34.1, 0.35.0, 0.35.1 |
 | ImpactfulSkills | 0.21.0, 0.21.1, 0.21.3, 0.22.0, 0.22.1 |
 | ValheimTune | 0.7.9 |
+| Heightmap Unlimited JvL | 2.0.2 |
 
 > **Note**: If you're using ImpactfulSkills, this mod also needs to be installed on each client running ImpactfulSkills for it to work properly.
 
@@ -44,6 +45,14 @@ Serverbound integrates with the audited OdinShip 0.8.7 build. Install Serverboun
 Nearby clients can request customization and turret-mode changes from the current ship owner. Request range is 8 m from ship controls for customization and rename, or from a ship turret for mode changes. The owner checks access before applying rename and routed requests. Direct owner customization and turret writes retain OdinShip's permissions. Requests do not transfer ship ownership.
 
 Rename requests report acceptance or rejection, including submissions by the owner. Requests time out visibly after five seconds without a response. The OdinShip integration remains active if simulation rolls back.
+
+### Heightmap Unlimited JvL
+
+Heightmap Unlimited JvL 2.0.2 registers its terrain patches only on clients. A simulating server without them rebuilds saved terrain within 8 m of the original ground, and creatures it owns can move through ground that players see as solid. When that server owns a terrain area, leveling or raising there also cuts the saved change back to 8 m for everyone.
+
+With that build installed on the dedicated server, Serverbound runs the mod's own terrain patches there. The limits come from the `Max Height` and `Min Height` settings in the server's Heightmap Unlimited JvL config. Check the log for `TerrainLimits: APPLIED`. Clients keep using the mod as before. Serverbound changes no terrain limits on clients.
+
+Serverbound does not restore terrain that an earlier server already cut back to 8 m.
 
 ## How ownership works
 
@@ -74,6 +83,7 @@ Choose one owner for overlapping networking and simulation settings. Do not copy
 
 - `REJECTED BUILD/INSTALLATION`: check game/mod builds against the supported versions and remove predecessor DLLs. Do not bypass guards.
 - `Simulation: DISABLED`: fix the reported takeover mismatch and restart. Stop the server if rollback reports hooks still installed.
+- `TerrainLimits: NOT APPLIED`: the server still limits terrain to 8 m. Install the supported Heightmap Unlimited JvL build on the server, restart, and keep players from leveling or raising terrain until the log shows `TerrainLimits: APPLIED`.
 - Repeated dungeon loading or distant objects flickering with VCP: check the world-start messages confirming spawn-queue and unload-hook removal.
 - Missing skill state: check that the client has Serverbound, the supported ImpactfulSkills build, and `Compatibility / ClientSkills=true`.
 - Slow loading or delayed interactions: compare frame times, object counts, memory, and send queues. Raising an object budget or queue size can make other delays worse.

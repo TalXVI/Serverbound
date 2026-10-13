@@ -31,6 +31,7 @@ internal static class Program
             if (Environment.GetEnvironmentVariable("SERVERBOUND_TEST_MODE") == "server") RunServer();
             else { SimulationTests.Policy(Test); ClientSimulationTests.Run(Lab, Test); }
             OdinShipTests.Run(Lab, Test);
+            TerrainLimitsTests.Run(Lab, Environment.GetEnvironmentVariable("SERVERBOUND_TEST_MODE") == "server", Test);
             SysConsole.WriteLine($"PASS: {passed} test cases"); return 0;
         }
         catch (Exception exception) { SysConsole.Error.WriteLine(exception); return 1; }
