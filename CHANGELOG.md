@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6
+
+- Supports ValheimCommunityPatch 0.36.0 while retaining the previously supported builds.
+
 ## 0.1.5
 
 - Applies Heightmap Unlimited JvL 2.0.2's configured terrain limits on the dedicated server. The server no longer rebuilds terrain raised or dug beyond 8 m at the 8 m limit, and no longer cuts saved terrain back to 8 m when it levels or raises ground it owns.

@@ -31,7 +31,7 @@ Serverbound accepts audited Valheim 1.0.16 and 1.0.17 Windows client and Windows
 | Mod | Verified version |
 |---|---|
 | ValheimPerformanceOptimizations | 1.2.3 |
-| ValheimCommunityPatch | 0.34.1, 0.35.0, 0.35.1 |
+| ValheimCommunityPatch | 0.34.1, 0.35.0, 0.35.1, 0.36.0 |
 | ImpactfulSkills | 0.21.0, 0.21.1, 0.21.3, 0.22.0, 0.22.1 |
 | ValheimTune | 0.7.9 |
 | Heightmap Unlimited JvL | 2.0.2 |
