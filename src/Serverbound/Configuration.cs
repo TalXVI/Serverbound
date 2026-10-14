@@ -34,6 +34,8 @@ namespace Serverbound.Settings
 		public static ConfigEntry<bool> compatVcpUnload;
 		public static ConfigEntry<bool> fixTeleportGhosts;
 		public static ConfigEntry<bool> fixStationRange;
+		public static ConfigEntry<bool> fixServerSmoke;
+		public static ConfigEntry<bool> fixHandedOverFires;
 
 		public static void Load(ConfigFile config)
 		{
@@ -96,6 +98,10 @@ namespace Serverbound.Settings
 				"Tell the players near the old spot to drop a player who teleported away. Valheim 1.0 checks whether an object left their area before it stores the new position, so the teleported player stayed there for them, frozen, until they next crossed a zone line.");
 			fixStationRange = config.Bind<bool>("Fixes", "StationRange", true,
 				"Keep the no-spawn area around each crafting station as wide as its build range, upgrades included. The game only sizes that area for a player on their own machine, so on this server a workbench kept its base 20 m however many upgrades it had, and a mod's larger build range never reached it.");
+			fixServerSmoke = config.Bind<bool>("Fixes", "ServerSmoke", true,
+				"Let fireplaces, fires and smelters make smoke on the server while a player is within 64 m of them, as they do on that player's machine. The game only makes smoke near its own local player, and a server has none, so smoke never blocked anything the server ran: a fireplace every player saw smothered kept burning fuel and lighting what touched it, a fire under a roof never choked, and a smelter, kiln or furnace with a blocked chimney kept working.");
+			fixHandedOverFires = config.Bind<bool>("Fixes", "HandedOverFires", true,
+				"Put out a fire that the server took over from a player once the piece, tree or log it burns on is gone. The game only tells the machine that lit a fire what it burns on, so a fire whose player left kept burning in mid-air on the server after its piece was destroyed.");
 		}
 
 		private static void RemoveRetiredSettings(ConfigFile config)

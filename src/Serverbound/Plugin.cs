@@ -32,7 +32,7 @@ namespace Serverbound
 	{
 		public const string PluginGUID = "org.serverbound.valheim";
 		public const string PluginName = "Serverbound";
-		public const string PluginVersion = "0.1.7";
+		public const string PluginVersion = "0.1.8";
 
 		private static Plugin context;
 		public static Plugin instance => context;
@@ -102,6 +102,8 @@ namespace Serverbound
 			availableFeatures.AddFeature(new VcpObjectPassPatch());
 			availableFeatures.AddFeature(new Features.DungeonLoadGuard());
 			availableFeatures.AddFeature(new Features.StationRange());
+			availableFeatures.AddFeature(new Features.ServerSmoke());
+			availableFeatures.AddFeature(new Features.HandedOverFires());
 
 			PatchRequirements patchRequirements = new PatchRequirements();
 			patchRequirements.AddRequirement(new PatchRequirement.DebugBuild());

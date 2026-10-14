@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.8
+
+- Makes smoke on the dedicated server near players, so smoke blocks what the server runs the same way it does on a player's machine. The server never made smoke before, so a fireplace that players saw smothered kept burning fuel and setting nearby things alight, fires under a roof never choked, and smelters, kilns, and furnaces with blocked chimneys kept working. Those stations now stop until their chimney is clear, as they do without this mod. The new `[Fixes] ServerSmoke` setting is on by default.
+- Puts out a fire the server took over from a player once the piece, tree, or log it burns on is destroyed. The server used to keep such a fire burning in mid-air until it timed out. The new `[Fixes] HandedOverFires` setting is on by default.
+
 ## 0.1.7
 
 - Keeps the no-spawn area around each crafting station as wide as its build range on the dedicated server, including the range each upgrade adds and any larger range set by another mod. The server used to keep the area at its default 20 m, so creatures could spawn inside a base. The new `[Fixes] StationRange` setting is on by default.
