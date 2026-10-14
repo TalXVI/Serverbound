@@ -111,7 +111,7 @@ namespace Serverbound.Features
 		}
 
 		[HarmonyPatch(typeof(DungeonGenerator), "OnRoomLoaded")]
-		[HarmonyAfter(Compat_ValheimCommunityPatch.PluginId)]
+		[HarmonyAfter(Compatibility.VcpObjectPassPatch.PluginId)]
 		public static class DungeonGenerator_OnRoomLoaded_Patch
 		{
 			static bool Prefix(DungeonGenerator __instance, LoadResult result, bool __runOriginal)

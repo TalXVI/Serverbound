@@ -178,7 +178,7 @@ namespace Serverbound.Features
 
 				RemoveDuplicates(currentObjects);
 				RemoveDuplicates(currentDistantObjects);
-				if (Compat_ValheimCommunityPatch.UnloadKept)
+				if (Compatibility.VcpObjectPassPatch.UnloadKept)
 				{
 					// ValheimCommunityPatch unloads around the reference position when these lists look as the
 					// game filled them, which they do when no peers' areas overlap; a no-op edit sends it down

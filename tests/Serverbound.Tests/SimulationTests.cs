@@ -14,7 +14,7 @@ using UnityEngine;
 internal static class SimulationTests
 {
     private const string Core = "org.serverbound.valheim.Core";
-    private const string ForkVcp = "org.serverbound.valheim.Compat_ValheimCommunityPatch";
+    private const string ForkVcp = "org.serverbound.valheim.VcpObjectPassPatch";
     private static readonly BindingFlags Flags = BindingFlags.Static | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
     private static Assembly fork = null!, vpo = null!, vcp = null!, impact = null!;
     private static Type simulation = null!, skills = null!;
@@ -330,7 +330,7 @@ internal static class SimulationTests
     }
     private static bool Active => (bool)simulation.GetProperty("Active", Flags)!.GetValue(null);
     private static MethodInfo ForkVcpHook() => AccessTools.Method(fork.GetType(
-        "Serverbound.Features.Compat_ValheimCommunityPatch+ZNetScene_Awake_Patch", true), "Postfix");
+        "Serverbound.Compatibility.VcpObjectPassPatch+ZNetScene_Awake_Patch", true), "Postfix");
     private static void Prepare()
     {
         Func<string, Assembly?> resolve = guid => guid == "org.serverbound.valheim" ? fork

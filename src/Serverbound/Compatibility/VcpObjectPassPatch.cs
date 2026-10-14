@@ -8,9 +8,8 @@ using System.Linq;
 using System.Reflection;
 using System;
 using System.Collections.Generic;
-using Serverbound.Compatibility;
 
-namespace Serverbound.Features
+namespace Serverbound.Compatibility
 {
 	/*
 		ValheimCommunityPatch speeds up the object pass by assuming what a client can assume: that
@@ -33,7 +32,7 @@ namespace Serverbound.Features
 		Neither has a switch of its own. Each is removed once the world starts unless its [Compat]
 		setting keeps it; the rest of ValheimCommunityPatch is left alone.
 	*/
-	public class Compat_ValheimCommunityPatch : IFeature
+	public class VcpObjectPassPatch : IFeature
 	{
 		public const string PluginId = "MidnightsFX.ValheimCommunityPatch";
 

@@ -11,7 +11,7 @@ namespace Serverbound.Compatibility
     {
         internal const string ServerboundGuid = Plugin.PluginGUID;
         internal const string CoreOwner = ServerboundGuid + ".Core";
-        private const string CompatOwner = ServerboundGuid + ".Compat_ValheimCommunityPatch";
+        private const string CompatOwner = ServerboundGuid + "." + nameof(VcpObjectPassPatch);
         private const string VpoGuid = "dev.ontrigger.vpo";
         private const string VcpGuid = "MidnightsFX.ValheimCommunityPatch";
         private const string VpoHash = "614CD643343E2E2D182BA4B50AA8C96D8FEDB8E09A16C6AA0018BAD222D6EE70";
@@ -91,12 +91,12 @@ namespace Serverbound.Compatibility
                     Type group = Guard.Type(vcp, "ValheimCommunityPatch.Patches.Performance.SceneIdleSkipPatch");
                     hooks.Add(ExactHook(typeof(ZNetScene), "CreateDestroyObjects", AccessTools.DeclaredMethod(group, "CreateDestroyObjectsPrefix"), VcpGuid, HarmonyPatchType.Prefix));
                     hooks.Add(ExactHook(typeof(ZNetScene), "CreateDestroyObjects", AccessTools.DeclaredMethod(group, "CreateDestroyObjectsPostfix"), VcpGuid, HarmonyPatchType.Postfix));
-                    Type compat = typeof(Features.Compat_ValheimCommunityPatch.ZNetScene_Awake_Patch);
+                    Type compat = typeof(VcpObjectPassPatch.ZNetScene_Awake_Patch);
                     MethodInfo target = Guard.Method(typeof(ZNetScene), "Awake", typeof(void));
                     MethodInfo hook = Guard.Method(compat, "Postfix", typeof(void));
                     if (!All(target).Any(p => p.PatchMethod == hook))
                     {
-                        if (Features.Compat_ValheimCommunityPatch.ZNetScene_Awake_Patch.s_done)
+                        if (VcpObjectPassPatch.ZNetScene_Awake_Patch.s_done)
                             throw new NotSupportedException("Serverbound VCP takeover already ran but its registration is missing.");
                         missingCompat = (target, hook);
                     }

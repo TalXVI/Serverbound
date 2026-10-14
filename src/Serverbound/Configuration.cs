@@ -33,6 +33,7 @@ namespace Serverbound.Settings
 		public static ConfigEntry<bool> compatVcpSpawnQueue;
 		public static ConfigEntry<bool> compatVcpUnload;
 		public static ConfigEntry<bool> fixTeleportGhosts;
+		public static ConfigEntry<bool> fixStationRange;
 
 		public static void Load(ConfigFile config)
 		{
@@ -93,6 +94,8 @@ namespace Serverbound.Settings
 				"Only matters with ValheimCommunityPatch installed. Its zone-diff unload replaces ZNetScene.RemoveObjects and, whenever the object lists look untouched, drops everything outside the simulation distance of the server's reference position -- the world origin on a dedicated server. With players whose areas do not overlap, objects around them are then destroyed and created again on every pass (dungeons reloading dozens of times a second, doors, beds and items that cannot be used). Off: that patch of ValheimCommunityPatch is removed when the world starts. On: it is kept, and this mod marks its object lists as edited on every pass so that patch takes the game's own unload check.");
 			fixTeleportGhosts = config.Bind<bool>("Fixes", "TeleportGhosts", true,
 				"Tell the players near the old spot to drop a player who teleported away. Valheim 1.0 checks whether an object left their area before it stores the new position, so the teleported player stayed there for them, frozen, until they next crossed a zone line.");
+			fixStationRange = config.Bind<bool>("Fixes", "StationRange", true,
+				"Keep the no-spawn area around each crafting station as wide as its build range, upgrades included. The game only sizes that area for a player on their own machine, so on this server a workbench kept its base 20 m however many upgrades it had, and a mod's larger build range never reached it.");
 		}
 
 		private static void RemoveRetiredSettings(ConfigFile config)

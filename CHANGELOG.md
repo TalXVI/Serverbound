@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.7
+
+- Keeps the no-spawn area around each crafting station as wide as its build range on the dedicated server, including the range each upgrade adds and any larger range set by another mod. The server used to keep the area at its default 20 m, so creatures could spawn inside a base. The new `[Fixes] StationRange` setting is on by default.
+
 ## 0.1.6
 
 - Supports ValheimCommunityPatch 0.36.0 while retaining the previously supported builds.
