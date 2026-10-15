@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.10
+
+- Supports ValheimCommunityPatch 0.36.1 while retaining the previously supported builds.
+
 ## 0.1.9
 
 - Supports Valheim 1.0.20 Windows clients and dedicated servers and ImpactfulSkills 0.23.0. Previously supported builds remain supported.

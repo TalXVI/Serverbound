@@ -32,7 +32,7 @@ namespace Serverbound
 	{
 		public const string PluginGUID = "org.serverbound.valheim";
 		public const string PluginName = "Serverbound";
-		public const string PluginVersion = "0.1.9";
+		public const string PluginVersion = "0.1.10";
 
 		private static Plugin context;
 		public static Plugin instance => context;
