@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.9
+
+- Supports Valheim 1.0.20 Windows clients and dedicated servers and ImpactfulSkills 0.23.0. Previously supported builds remain supported.
+
 ## 0.1.8
 
 - Makes smoke on the dedicated server near players, so smoke blocks what the server runs the same way it does on a player's machine. The server never made smoke before, so a fireplace that players saw smothered kept burning fuel and setting nearby things alight, fires under a roof never choked, and smelters, kilns, and furnaces with blocked chimneys kept working. Those stations now stop until their chimney is clear, as they do without this mod. The new `[Fixes] ServerSmoke` setting is on by default.
