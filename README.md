@@ -24,7 +24,7 @@ The new assembly and namespace are `Serverbound`; the plugin GUID is `org.server
 
 ## Supported builds
 
-Serverbound accepts audited Valheim 1.0.16 and 1.0.17 Windows client and Windows/Linux dedicated assemblies, plus 1.0.20 Windows client and dedicated assemblies. It rejects unsupported assembly hashes.
+Serverbound accepts audited Valheim 1.0.16, 1.0.17, and 1.0.20 Windows client and Windows/Linux dedicated assemblies. It rejects unsupported assembly hashes.
 
 ## Verified supported mods
 

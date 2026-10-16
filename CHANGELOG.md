@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.11
+
+- Supports the Valheim 1.0.20 Linux dedicated build. Unsupported game detection previously prevented server simulation and the configured server FPS target from applying on this build.
+
 ## 0.1.10
 
 - Supports ValheimCommunityPatch 0.36.1 while retaining the previously supported builds.
