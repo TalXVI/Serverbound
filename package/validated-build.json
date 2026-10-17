@@ -629,7 +629,7 @@
         "core/MonoMod.Utils.dll": "9d1495f147ac93c4f81f84538c1a326e8f8a6aefc78d6289d798f3ce1162c5e9",
         "plugins/Serverbound/Serverbound.dll": "20c0b653f27ae1cdf3dc420fc71d73ef2f5532fa088eacdda8c90e9b88883246"
       },
-      "logSha256": "fd9b1eaa8f42fdf5ab5f734855f9804e7cb039d32a434299618d5795bc69708e"
+      "logSha256": "04f46e8e642e7d4c0530740512f4d523719e879ccab1405cdb595c7a4505004e"
     },
     {
       "role": "smoke-skills",
@@ -737,7 +737,7 @@
         "plugins/Jotunn/Jotunn.dll": "9509221046842a70f94b98bab4cb41005dee026823a7a79345829ed46a30f796",
         "plugins/Serverbound/Serverbound.dll": "20c0b653f27ae1cdf3dc420fc71d73ef2f5532fa088eacdda8c90e9b88883246"
       },
-      "logSha256": "8d7ca16530a413ecf22de48c81aae238a3053f461dc625e0352f01ac56cb9c13"
+      "logSha256": "83c4915395551cde2b590945f0903bf6fb51084ecb03241804232db4fae42995"
     },
     {
       "role": "smoke-vcp",
@@ -845,7 +845,7 @@
         "plugins/Serverbound/Serverbound.dll": "20c0b653f27ae1cdf3dc420fc71d73ef2f5532fa088eacdda8c90e9b88883246",
         "plugins/ValheimCommunityPatch/ValheimCommunityPatch.dll": "a55ec3fa37ba16baaf848cc0b17aafb91572b37fb5f6e1ded0fd5575ba8db6e5"
       },
-      "logSha256": "fe0c8619d4f7aadb191fb9acb8fef4382c2c25087abd7f3d7acf8d8cb309e35d"
+      "logSha256": "1905c229d0173241e00462710375df5803b4375da97d977665d73033390ac266"
     },
     {
       "role": "smoke-profile",
@@ -1032,7 +1032,7 @@
         "plugins/ZenDragon-Zen_ModLib/Zen.ModLib.dll": "73703e097014d2488a893499714de0b53775fe357ba3b421bff6dccd691438e7",
         "plugins/ZenDragon-ZenCombat/ZenCombat.dll": "dc23443679859721df2107d6c2b44dda1c9e8f4a0c3c9cb765c6410786160ed8"
       },
-      "logSha256": "97cca92b10011735ce08ced7859d6a6b53bff306bdab302fc00defc73c0f619a"
+      "logSha256": "3012925da07e324619a632854ce2429c5f5c63751417977aec5e00facd5d80a6"
     }
   ],
   "multiplayerAccepted": false,
