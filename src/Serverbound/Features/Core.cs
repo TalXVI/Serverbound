@@ -605,28 +605,20 @@ namespace Serverbound.Features
 			}
 		}
 
-		[HarmonyPatch(typeof(ZNetScene), "OutsideActiveArea", new Type[] { typeof(Vector3) })]
+		[HarmonyPatch(typeof(ZNetScene), "OutsideActiveArea", new Type[] { typeof(Vector3), typeof(Vector2s) })]
 		public static class ZNetScene_OutsideActiveArea_Patch
-		/*
-			Originally uses `ZNet.GetReferencePosition` to determine active area but with the server 
-			handling all areas, it must check if the `Vector3` is within any of the peers' active areas.
-
-			Returns `false` if the point is within *any* of the peers' active areas and `true` otherwise.
-
-			SpawnArea (e.g BonePileSpawner) uses `OutsideActiveArea` to determine if it should be simulated.
-		*/
 		{
-			static bool Prefix(ref bool __result, ZNetScene __instance, Vector3 point)
+			// Both overloads must use ready-player areas, including StaticPhysics's
+			// direct call with the dedicated server's otherwise inactive reference zone.
+			static bool Prefix(ref bool __result, Vector3 point)
 			{
 				__result = true;
 				foreach (ZNetPeer znetPeer in ZNet.instance.GetPeers())
 				{
-					// OutsideActiveArea(Vector3, Vector3) is gone in 1.0 -- only
-					// (Vector3) and (Vector3, Vector2s) remain, so pass the peer's
-					// zone instead of their raw position.
-					if (znetPeer.IsReady() && !ZNetScene.OutsideActiveArea(point, ZoneSystem.GetZone(znetPeer.GetRefPos())))
+					if (znetPeer.IsReady() && ZNetScene.InActiveArea(point, ZoneSystem.GetZone(znetPeer.GetRefPos())))
 					{
 						__result = false;
+						break;
 					}
 				}
 				return false;

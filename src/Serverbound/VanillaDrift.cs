@@ -47,8 +47,8 @@ namespace Serverbound
 			{ AccessTools.Method(typeof(ZDOMan), "SendZDOToPeers2"), new[] {
 				"ZDOMan::SendZDOs",
 			} },
-			{ AccessTools.Method(typeof(ZNetScene), "OutsideActiveArea", new[] { typeof(UnityEngine.Vector3) }), new[] {
-				"ZNet::GetReferencePosition", "ZNet::get_instance", "ZNetScene::OutsideActiveArea", "ZoneSystem::GetZone",
+			{ AccessTools.Method(typeof(ZNetScene), "OutsideActiveArea", new[] { typeof(UnityEngine.Vector3), typeof(Vector2s) }), new[] {
+				"ZNetScene::PointInsideActiveArea",
 			} },
 			{ AccessTools.Method(typeof(Ship), "UpdateOwner"), new[] {
 				"Ship::GetNewOwnerID", "Ship::IsPlayerInBoat", "Ship::RefreshPlayerList", "ZDO::SetOwner",

@@ -72,6 +72,10 @@ def run_suite(runtime, game, executable):
         # These are the same native scene boundaries as the original offline host.
         # Keep every callback alive until Mono finishes. No Unity scene is created.
         callbacks = [
+            # StaticPhysics reaches Utils through ZoneSystem.GetZone. Its initializer
+            # reads this native string; the offline scene has no persistent-data path.
+            ("UnityEngine.Application::get_persistentDataPath_Injected", ctypes.CFUNCTYPE(None, pointer)(lambda result: ctypes.memset(result, 0, ctypes.sizeof(pointer) + ctypes.sizeof(integer)))),
+            ("UnityEngine.Bindings.BindingsAllocator::Free", ctypes.CFUNCTYPE(None, pointer)(lambda value: None)),
             ("UnityEngine.Application::get_platform", ctypes.CFUNCTYPE(integer)(lambda: 44 if os.environ.get("SERVERBOUND_TEST_MODE") == "server" else 2)),
             ("UnityEngine.Object::GetOffsetOfInstanceIDInCPlusPlusObject", ctypes.CFUNCTYPE(integer)(lambda: 0)),
             ("UnityEngine.Object::CurrentThreadIsMainThread", ctypes.CFUNCTYPE(integer)(lambda: 1)),
