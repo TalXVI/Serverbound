@@ -31,12 +31,16 @@ Serverbound accepts audited Valheim 1.0.16, 1.0.17, and 1.0.20 Windows client an
 | Mod | Verified version |
 |---|---|
 | ValheimPerformanceOptimizations | 1.2.3 |
-| ValheimCommunityPatch | 0.34.1, 0.35.0, 0.35.1, 0.36.0, 0.36.1 |
-| ImpactfulSkills | 0.21.0, 0.21.1, 0.21.3, 0.22.0, 0.22.1, 0.23.0 |
-| ValheimTune | 0.7.9 |
+| ValheimCommunityPatch | 0.34.1, 0.35.0, 0.35.1, 0.36.0, 0.36.1, 0.37.0 |
+| ImpactfulSkills | 0.21.0, 0.21.1, 0.21.3, 0.22.0, 0.22.1, 0.23.0, 0.24.0 |
+| ValheimTune | 0.7.9, 0.7.10 |
 | Heightmap Unlimited JvL | 2.0.2 |
 
 > **Note**: If you're using ImpactfulSkills, this mod also needs to be installed on each client running ImpactfulSkills for it to work properly.
+
+### ValheimCommunityPatch spawning
+
+With VCP 0.37.0, Serverbound runs VCP's Love Potion spawn fix on the dedicated server. It uses the potion status published by clients running VCP and retains the vendor's configuration. A player without published status receives the base spawn behavior. Existing vendor hooks are kept, and disabling simulation removes only the hooks Serverbound added.
 
 ### OdinShip
 

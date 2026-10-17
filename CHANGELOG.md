@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.12
+
+- Supports ValheimCommunityPatch 0.37.0 and ImpactfulSkills 0.24.0 while retaining previously supported builds.
+- Runs VCP's Love Potion spawn correction on the dedicated server when server simulation is active, preserving its configuration and existing vendor registrations.
+- Lets static objects settle around remote players after terrain changes, so chopping a lowered tree uses its settled position for the stump.
+
 ## 0.1.11
 
 - Supports the Valheim 1.0.20 Linux dedicated build. Unsupported game detection previously prevented server simulation and the configured server FPS target from applying on this build.
