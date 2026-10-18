@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.13
+
+- Removes ComfortTweaks 3.3.11's client-only rested check from dedicated-server portal triggers. Nonplayer colliders previously caused repeated null-reference exceptions. Clients keep the existing portal rule.
+
 ## 0.1.12
 
 - Supports ValheimCommunityPatch 0.37.0 and ImpactfulSkills 0.24.0 while retaining previously supported builds.

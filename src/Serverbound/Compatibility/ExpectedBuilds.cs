@@ -50,5 +50,11 @@ namespace Serverbound.Compatibility
         {
             "F7C2C869CA3CAE30309D657984197B700C9E541C6C18D264AE8E422A9969D4A9"
         };
+
+        // ComfortTweaks 3.3.11; its client-local portal rule also registers on headless servers.
+        internal static readonly string[] ComfortTweaks =
+        {
+            "AB6E31F25C37BBB4DA04401F1310619FDD5DFBDBD40F6E852A47C35DAB5183B6"
+        };
     }
 }

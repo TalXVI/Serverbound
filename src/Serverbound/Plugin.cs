@@ -26,13 +26,14 @@ namespace Serverbound
 	[BepInDependency("MidnightsFX.ValheimCommunityPatch", BepInDependency.DependencyFlags.SoftDependency)]
 	[BepInDependency("DeepNorthCompat", BepInDependency.DependencyFlags.SoftDependency)]
 	[BepInDependency("marlthon.OdinShip", BepInDependency.DependencyFlags.SoftDependency)]
+	[BepInDependency("xyz.alcan.comfortcalc", BepInDependency.DependencyFlags.SoftDependency)]
 	[BepInIncompatibility(CompatibilityInstaller.LegacyGuid)]
 
 	public class Plugin : BaseUnityPlugin
 	{
 		public const string PluginGUID = "org.serverbound.valheim";
 		public const string PluginName = "Serverbound";
-		public const string PluginVersion = "0.1.12";
+		public const string PluginVersion = "0.1.13";
 
 		private static Plugin context;
 		public static Plugin instance => context;

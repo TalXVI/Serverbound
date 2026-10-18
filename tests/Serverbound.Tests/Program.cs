@@ -28,6 +28,7 @@ internal static class Program
             InitializePaths();
             ConfigurationTests.Run(Lab, Test);
             InstallationTests.Run(Test);
+            ComfortPortalTests.Run(Lab, Environment.GetEnvironmentVariable("SERVERBOUND_TEST_MODE") == "server", Test);
             if (Environment.GetEnvironmentVariable("SERVERBOUND_TEST_MODE") == "server") RunServer();
             else { SimulationTests.Policy(Test); ClientSimulationTests.Run(Lab, Test); }
             OdinShipTests.Run(Lab, Test);

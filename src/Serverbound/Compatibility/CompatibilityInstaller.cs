@@ -37,6 +37,7 @@ namespace Serverbound.Compatibility
             OdinShipOwnershipPatch.Prepare(resolve(OdinShipGuid));
             SimulationPatch.Prepare(resolve);
             TerrainLimitsPatch.Prepare(resolve, dedicated);
+            ComfortPortalPatch.Prepare(resolve, dedicated);
             if (!installOwnerSkills)
             {
                 Info("OwnerSkills: disabled by client configuration.");
@@ -55,6 +56,7 @@ namespace Serverbound.Compatibility
             if (resolveAssembly != null) OdinShipOwnershipPatch.Prepare(resolveAssembly(OdinShipGuid));
             OdinShipOwnershipPatch.Verify();
             TerrainLimitsPatch.Verify();
+            ComfortPortalPatch.Verify();
             SimulationPatch.Verify();
             OwnerSkillPatch.Verify();
         }
