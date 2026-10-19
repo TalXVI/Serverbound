@@ -99,6 +99,7 @@ def main():
         if any(plugins.rglob("Digitalroot.HeightmapUnlimitedJvL.dll")):
             gates += ["TerrainLimits: APPLIED"]
     ready = False
+    save_position = None
     with (runtime / "stdout.log").open("w",encoding="utf-8") as output:
         process = subprocess.Popen(command, cwd=runtime, env=env, stdin=subprocess.PIPE, stdout=output, stderr=subprocess.STDOUT, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
         print(f"Temporary {runtime.name} server PID {process.pid}", flush=True)
@@ -107,8 +108,16 @@ def main():
             while process.poll() is None and time.monotonic() < deadline:
                 log = bepinex / "LogOutput.log"
                 contents = log.read_text(encoding="utf-8",errors="replace") if log.exists() else ""
-                if all(gate in contents for gate in gates) and "Game server connected" in contents:
-                    ready = True; process.stdin.write("save\nstop\n"); process.stdin.flush(); break
+                if save_position is None and all(gate in contents for gate in gates) and "Game server connected" in contents:
+                    save_position = (runtime / "unity.log").stat().st_size
+                    process.stdin.write("save\n"); process.stdin.flush()
+                if save_position is not None:
+                    with (runtime / "unity.log").open("rb") as saved_log:
+                        saved_log.seek(save_position)
+                        saved = saved_log.read().decode("utf-8", errors="replace")
+                    requested = saved.find("Console: Saving world")
+                    if requested >= 0 and "World save (5/5) done." in saved[requested:]:
+                        ready = True; process.stdin.write("stop\n"); process.stdin.flush(); break
                 if "Simulation: DISABLED" in contents or "Serverbound: REJECTED" in contents:
                     break
                 if any("Could not load [" + name in contents for name in
