@@ -15,8 +15,11 @@ internal static class InstallationTests
         test("Serverbound identity is independent and predecessor loading is incompatible", () =>
         {
             var metadata = typeof(Plugin).GetCustomAttribute<BepInEx.BepInPlugin>()!;
-            Check(metadata.GUID == "org.serverbound.valheim" && metadata.Name == "Serverbound" && metadata.Version.ToString() == "0.1.13", "identity");
-            Check(typeof(Plugin).Assembly.GetName().Version == new System.Version(0, 1, 13, 0), "assembly identity");
+            Check(metadata.GUID == "org.serverbound.valheim" && metadata.Name == "Serverbound", "identity");
+            System.Version assembly = typeof(Plugin).Assembly.GetName().Version;
+            string package = PackageVersion();
+            Check(metadata.Version.ToString() == package && new System.Version(assembly.Major, assembly.Minor, assembly.Build).ToString() == package
+                && assembly.Revision == 0, $"plugin {metadata.Version}, assembly {assembly} and package {package} versions differ");
             Check(typeof(Plugin).GetCustomAttribute<BepInEx.BepInIncompatibility>()!.IncompatibilityGUID == CompatibilityInstaller.LegacyGuid, "loader conflict guard");
             Check(!typeof(Plugin).Assembly.GetReferencedAssemblies().Any(a => a.Name == "DeepNorthCompat" || a.Name == "ImpactfulSkills"), "mandatory compatibility dependency");
         });
@@ -35,7 +38,7 @@ internal static class InstallationTests
             var errors = new List<string>();
             CompatibilityInstaller.Install(_ => null, _ => { }, _ => { }, errors.Add);
             Check(errors.Count == 0, string.Join("\n", errors));
-            if (!Guard.KnownServerBuild()) return;
+            if (Environment.GetEnvironmentVariable("SERVERBOUND_TEST_MODE") != "server") return;
             var harmony = new Harmony(SimulationPatch.CoreOwner);
             try
             {
@@ -102,6 +105,18 @@ internal static class InstallationTests
         });
     }
     private static void Noop() { }
+    private static string PackageVersion()
+    {
+        for (var folder = new System.IO.DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory); folder != null; folder = folder.Parent)
+        {
+            string manifest = System.IO.Path.Combine(folder.FullName, "package", "manifest.json");
+            if (!System.IO.File.Exists(manifest)) continue;
+            var version = System.Text.RegularExpressions.Regex.Match(System.IO.File.ReadAllText(manifest), "\"version_number\"\\s*:\\s*\"([^\"]+)\"");
+            if (!version.Success) throw new Exception(manifest + " has no version_number");
+            return version.Groups[1].Value;
+        }
+        throw new Exception("package/manifest.json was not found above the test assembly");
+    }
     private static void Reject(Action action) { try { action(); } catch (NotSupportedException) { return; } throw new Exception("expected rejection"); }
     private static void Check(bool value, string message) { if (!value) throw new Exception(message); }
 }

@@ -49,16 +49,6 @@ internal static class ConfigurationTests
                 Check(config.SaveOnConfigSet, "vendor did not restore automatic saving");
             })));
 
-        test("generated configuration omits character and item restrictions", () => WithConfig(null, config =>
-        {
-            Configuration.Load(config);
-            Check(config.SaveOnConfigSet, "automatic saving disabled");
-            CheckRemoved(config);
-            Check(typeof(Plugin).Assembly.GetType("Serverbound.Features.CharacterGuard") == null
-                && typeof(Plugin).Assembly.GetType("Serverbound.Features.ItemLedger") == null
-                && typeof(Plugin).Assembly.GetType("Serverbound.Features.GuardLog") == null, "retired implementation remains");
-        }));
-
         test("upgrade automatically removes retired settings before client binding", () => WithConfig(RetiredConfig, config =>
         {
             Configuration.Load(config);

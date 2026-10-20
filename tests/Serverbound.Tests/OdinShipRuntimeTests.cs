@@ -41,6 +41,8 @@ internal static class OdinShipRuntimeTests
             scene.Peer(100);
             scene.View.GetZDO().SetOwnerInternal(100);
             Check(scene.Authorize(100, out _, out _), "local owner readiness used its peer ID as a profile ID");
+            scene.View.GetZDO().Set("InUse", 1);
+            Check(scene.Authorize(100, out _, out _), "the owner's own open cargo blocked its request");
         });
 
         Case("rejects disconnected, dead, distant, occupied-cargo and stale-owner requests", scene =>
@@ -58,6 +60,9 @@ internal static class OdinShipRuntimeTests
             scene.View.GetZDO().SetOwnerInternal(777);
             Check(!scene.Authorize(100, out _, out string stale) && stale.Contains("ownership changed"), "stale owner accepted a write");
             scene.View.GetZDO().SetOwnerInternal(900);
+            Player.GetAllPlayers().Remove(scene.Requester);
+            Check(!scene.Authorize(100, out _, out string unloaded) && unloaded.Contains("player is no longer"), "connected peer without a loaded player accepted");
+            Player.GetAllPlayers().Add(scene.Requester);
             ZRoutedRpc.instance.m_peers.RemoveAll(peer => peer.m_uid == 100);
             Check(!scene.Authorize(100, out _, out string disconnected) && disconnected.Contains("connection"), "disconnected actor retained authority");
         });

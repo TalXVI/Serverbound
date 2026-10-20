@@ -255,7 +255,7 @@ namespace Serverbound.Compatibility
             nextRequestId = 0;
         }
 
-        internal static bool IsAuthorizedRequest(bool ownsCurrentObject, bool senderReady, bool playerAvailable,
+        private static bool IsAuthorizedRequest(bool ownsCurrentObject, bool senderReady, bool playerAvailable,
             bool playerAlive, bool withinRange, bool shipAvailable, bool helmOccupied, bool requesterAtHelm,
             bool cargoInUse, bool requesterOwnsCargo, out string rejection)
         {

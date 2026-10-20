@@ -8,12 +8,6 @@ namespace Serverbound.Compatibility
 {
     public static class Guard
     {
-        internal static bool KnownServerBuild()
-        {
-            using (SHA256 sha = SHA256.Create())
-            using (FileStream file = File.OpenRead(typeof(ZNet).Assembly.Location))
-                return ExpectedBuilds.Server.Contains(BitConverter.ToString(sha.ComputeHash(file)).Replace("-", ""));
-        }
         public static void Build(Assembly assembly, params string[] expectedHashes)
         {
             using (SHA256 sha = SHA256.Create())

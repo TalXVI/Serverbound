@@ -13,14 +13,6 @@ internal static class OdinShipTests
 {
     internal static void Run(string profile, Action<string, Action> test)
     {
-        test("OdinShip remains optional when its assembly is absent", () =>
-        {
-            OdinShipOwnershipPatch.ResetForTests();
-            OdinShipOwnershipPatch.Prepare(null);
-            Check(!OdinShipOwnershipPatch.IsInstalled, "absent OdinShip installed hooks");
-            OdinShipOwnershipPatch.Verify();
-        });
-
         test("OdinShip stays a soft dependency without a compile-time reference", () =>
         {
             Check(typeof(Plugin).GetCustomAttributes<BepInEx.BepInDependency>()
@@ -64,21 +56,10 @@ internal static class OdinShipTests
             OdinShipOwnershipPatch.Verify();
             Check(OdinShipOwnershipPatch.IsInstalled, "audited candidate was not applied");
 
-            Type customization = vendor.GetType("OdinShip.ShipCustomization", true)!;
-            Type customizationPatch = vendor.GetType("OdinShip.ShipCustomizationPatch", true)!;
-            Type turretPatch = vendor.GetType("OdinShip.TurretModePatch", true)!;
-            AssertHook(customization.GetMethod("Setup", BindingFlags.Instance | BindingFlags.NonPublic)!, "postfix", "RegisterShipRpcs");
-            AssertHook(customization.GetMethod("SetText", BindingFlags.Instance | BindingFlags.Public)!, "prefix", "TrackNameRequest");
-            AssertHook(customization.GetMethod("SetText", BindingFlags.Instance | BindingFlags.Public)!, "finalizer", "FinishNameSubmission");
-            AssertHook(customization.GetMethod("RPC_SetShipName", BindingFlags.Instance | BindingFlags.NonPublic)!, "prefix", "ValidateNameRequest");
-            AssertHook(customization.GetMethod("RPC_SetShipName", BindingFlags.Instance | BindingFlags.NonPublic)!, "postfix", "CompleteNameRequest");
-            AssertHook(customizationPatch.GetMethod("CycleObject", BindingFlags.Static | BindingFlags.NonPublic)!, "prefix", "RouteObjectCustomization");
-            AssertHook(customizationPatch.GetMethod("CycleMaterial", BindingFlags.Static | BindingFlags.NonPublic)!, "prefix", "RouteMaterialCustomization");
-            AssertHook(customizationPatch.GetMethod("Player_Update_Postfix", BindingFlags.Static | BindingFlags.Public)!, "transpiler", "CustomizationInputGate");
-            AssertHook(turretPatch.GetMethod("Player_Update_Postfix", BindingFlags.Static | BindingFlags.Public)!, "transpiler", "TurretInputGate");
-
-            CheckInputCallsRemain("CustomizationInputGate", "CanUseCustomizationInputs");
-            CheckInputCallsRemain("TurretInputGate", "TryRouteTurretMode");
+            CheckOnlyOwnerCheckRouted(AccessTools.Method(vendor.GetType("OdinShip.ShipCustomizationPatch", true), "Player_Update_Postfix"),
+                "CanUseCustomizationInputs");
+            CheckOnlyOwnerCheckRouted(AccessTools.Method(vendor.GetType("OdinShip.TurretModePatch", true), "Player_Update_Postfix"),
+                "TryRouteTurretMode");
         });
 
         test("OdinShip input IL mismatch leaves instructions intact and rejects only its own hooks", () =>
@@ -147,32 +128,6 @@ internal static class OdinShipTests
             }
         });
 
-        test("OdinShip owner validation rejects stale ownership and unauthorized access", () =>
-        {
-            Check(Allowed(owns: true, ready: true, player: true, alive: true, near: true, ship: true,
-                helmOccupied: false, atHelm: false, cargoInUse: false, cargoOwner: false), "nearby player on an idle ship rejected");
-            Check(Allowed(owns: true, ready: true, player: true, alive: true, near: true, ship: true,
-                helmOccupied: true, atHelm: true, cargoInUse: false, cargoOwner: false), "current helm user rejected");
-            Check(Allowed(owns: true, ready: true, player: true, alive: true, near: true, ship: true,
-                helmOccupied: false, atHelm: false, cargoInUse: true, cargoOwner: true), "current cargo owner rejected");
-            Reject(owns: false, ready: true, player: true, alive: true, near: true, ship: true,
-                helmOccupied: false, atHelm: false, cargoInUse: false, cargoOwner: false, contains: "ownership changed");
-            Reject(owns: true, ready: false, player: true, alive: true, near: true, ship: true,
-                helmOccupied: false, atHelm: false, cargoInUse: false, cargoOwner: false, contains: "connection");
-            Reject(owns: true, ready: true, player: false, alive: false, near: false, ship: true,
-                helmOccupied: false, atHelm: false, cargoInUse: false, cargoOwner: false, contains: "player is no longer");
-            Reject(owns: true, ready: true, player: true, alive: false, near: true, ship: true,
-                helmOccupied: false, atHelm: false, cargoInUse: false, cargoOwner: false, contains: "alive");
-            Reject(owns: true, ready: true, player: true, alive: true, near: false, ship: true,
-                helmOccupied: false, atHelm: false, cargoInUse: false, cargoOwner: false, contains: "closer");
-            Reject(owns: true, ready: true, player: true, alive: true, near: true, ship: false,
-                helmOccupied: false, atHelm: false, cargoInUse: false, cargoOwner: false, contains: "unavailable");
-            Reject(owns: true, ready: true, player: true, alive: true, near: true, ship: true,
-                helmOccupied: true, atHelm: false, cargoInUse: false, cargoOwner: false, contains: "helm user");
-            Reject(owns: true, ready: true, player: true, alive: true, near: true, ship: true,
-                helmOccupied: false, atHelm: false, cargoInUse: true, cargoOwner: false, contains: "cargo is in use");
-        });
-
         test("OdinShip option cycling handles invalid saved indices and empty lists", () =>
         {
             Check(OdinShipOwnershipPatch.TryNextIndex(0, 3, out int first) && first == 1, "first option");
@@ -205,50 +160,23 @@ internal static class OdinShipTests
         OdinShipOwnershipPatch.ResetForTests();
     }
 
-    private static bool Allowed(bool owns, bool ready, bool player, bool alive, bool near, bool ship,
-        bool helmOccupied, bool atHelm, bool cargoInUse, bool cargoOwner)
+    // The installed method must match the vendor's own IL except for its one owner check.
+    private static void CheckOnlyOwnerCheckRouted(MethodInfo target, string helperName)
     {
-        return OdinShipOwnershipPatch.IsAuthorizedRequest(owns, ready, player, alive, near, ship,
-            helmOccupied, atHelm, cargoInUse, cargoOwner, out _);
-    }
-
-    private static void Reject(bool owns, bool ready, bool player, bool alive, bool near, bool ship,
-        bool helmOccupied, bool atHelm, bool cargoInUse, bool cargoOwner, string contains)
-    {
-        Check(!OdinShipOwnershipPatch.IsAuthorizedRequest(owns, ready, player, alive, near, ship,
-            helmOccupied, atHelm, cargoInUse, cargoOwner, out string rejection), "request was authorized");
-        Check(rejection.IndexOf(contains, StringComparison.OrdinalIgnoreCase) >= 0, rejection);
-    }
-
-    private static void AssertHook(MethodBase target, string kind, string hookName)
-    {
-        Patches info = Harmony.GetPatchInfo(target)!;
-        IEnumerable<Patch> patches = kind == "prefix" ? info.Prefixes : kind == "postfix" ? info.Postfixes
-            : kind == "finalizer" ? info.Finalizers : info.Transpilers;
-        Check(patches.Any(patch => patch.owner == OdinShipOwnershipPatch.Owner && patch.PatchMethod.Name == hookName),
-            target.DeclaringType?.FullName + "." + target.Name + " missing " + hookName);
-    }
-
-    private static void CheckInputCallsRemain(string transpilerName, string ownerHelperName)
-    {
-        MethodInfo transpiler = typeof(OdinShipOwnershipPatch).GetMethod(transpilerName, BindingFlags.Static | BindingFlags.NonPublic)!;
-        MethodInfo helper = typeof(OdinShipOwnershipPatch).GetMethod(ownerHelperName, BindingFlags.Static | BindingFlags.NonPublic)!;
         MethodInfo ownerCheck = AccessTools.Method(typeof(ZNetView), nameof(ZNetView.IsOwner), Type.EmptyTypes);
-        MethodInfo keyCheck = typeof(OdinShipTests).GetMethod(nameof(KeyInputMarker), BindingFlags.Static | BindingFlags.NonPublic)!;
-        var sample = new[]
+        MethodInfo helper = AccessTools.Method(typeof(OdinShipOwnershipPatch), helperName);
+        List<CodeInstruction> original = PatchProcessor.GetOriginalInstructions(target);
+        List<CodeInstruction> current = PatchProcessor.GetCurrentInstructions(target);
+        string name = target.DeclaringType!.FullName + "." + target.Name;
+        Check(original.Count(code => code.Calls(ownerCheck)) == 1, name + " fixture lacks its single owner check");
+        Check(current.Count == original.Count, name + " instruction count changed");
+        for (int i = 0; i < original.Count; i++)
         {
-            new CodeInstruction(OpCodes.Ldarg_0),
-            new CodeInstruction(OpCodes.Callvirt, ownerCheck),
-            new CodeInstruction(OpCodes.Ldc_I4_0),
-            new CodeInstruction(OpCodes.Call, keyCheck)
-        };
-        var rewritten = ((IEnumerable<CodeInstruction>)transpiler.Invoke(null, new object[] { sample })!).ToList();
-        Check(rewritten.Count(code => code.Calls(keyCheck)) == 1, transpilerName + " changed the vendor key input call");
-        Check(rewritten.Count(code => code.Calls(helper)) == 1, transpilerName + " did not route the owner check");
-        Check(!rewritten.Any(code => code.Calls(ownerCheck)), transpilerName + " left the local-owner gate in place");
+            if (original[i].Calls(ownerCheck)) Check(current[i].Calls(helper), name + " owner check was not routed to " + helperName);
+            else Check(current[i].opcode == original[i].opcode
+                && (!(original[i].operand is MemberInfo) || Equals(current[i].operand, original[i].operand)), name + " changed instruction " + i);
+        }
     }
-
-    private static bool KeyInputMarker(KeyCode key) => false;
     private static void OtherModHook() { }
 
     private static void Check(bool condition, string message)

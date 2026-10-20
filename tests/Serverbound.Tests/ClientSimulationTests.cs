@@ -72,7 +72,9 @@ internal static class ClientSimulationTests
             foreach (string key in new[] { "Serverbound.mining", "Serverbound.woodcutting", "Serverbound.animalHandling" })
                 Check(zdo.GetFloat(key) == 0.75f, "wrong published factor " + key);
             AccessTools.Method(skills, "Status").Invoke(null, new object[] { 100L, false });
-            Check(!(bool)AccessTools.Field(skills, "coreOnServer").GetValue(null), "disabled Core not respected");
+            zdo.Set("Serverbound.skillProtocol", 0);
+            AccessTools.Method(skills, "Publish").Invoke(null, new object[] { player });
+            Check(zdo.GetInt("Serverbound.skillProtocol") == 0, "published after the server disabled Core");
         });
         Case("rejects forged or invalid XP and awards the intended local player once", () =>
         {

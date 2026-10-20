@@ -170,12 +170,14 @@ internal static class ServerSkillTests
         {
             var drop = Fake<CharacterDrop>(); Character character = Fake<Character>(); characters[drop] = character;
             AccessTools.Field(typeof(CharacterDrop), "m_character").SetValue(drop, character);
-            drop.m_drops = new List<CharacterDrop.Drop>();
+            GameObject meat = Fake<GameObject>();
+            drop.m_drops = new List<CharacterDrop.Drop> { new CharacterDrop.Drop { m_prefab = meat, m_amountMin = 3, m_amountMax = 3, m_chance = 1, m_dontScale = true } };
             Player unready = NewPlayer(140, 0.5f); Set(View(unready).GetZDO(), "Serverbound.skillProtocol", 0);
             AccessTools.Field(typeof(Player), "s_players").SetValue(null, new List<Player> { unready });
-            Check(drop.GenerateDropList() != null, "wild loot skipped");
+            bool BaseLoot() => drop.GenerateDropList() is var loot && loot.Count == 1 && loot[0].Key == meat && loot[0].Value == 3;
+            Check(BaseLoot(), "wild loot skipped or changed");
             AccessTools.Field(typeof(Character), "m_tamed").SetValue(character, true);
-            Check(drop.GenerateDropList() != null, "tamed loot skipped");
+            Check(BaseLoot(), "tamed loot skipped or received a bonus");
             object?[] args = { drop, null };
             Call("BeginLoot", args);
             using ((IDisposable)args[1]!) Check(Actor() == null, "unready player selected for tamed loot");

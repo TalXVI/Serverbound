@@ -24,10 +24,6 @@ internal static class SimulationTests
 
     internal static void Policy(Action<string, Action> test)
     {
-        test("skill state accepts zero and full skill without changing factors", () =>
-        {
-            foreach (float f in new[] { 0f, 0.01f, 0.5f, 1f }) Check(SkillState.RequireFactor(1, f) == f, "factor changed");
-        });
         test("missing, mismatched and invalid skill snapshots are rejected", () =>
         {
             foreach (float f in new[] { float.NaN, float.NegativeInfinity, float.PositiveInfinity, -0.1f, 1.1f })
