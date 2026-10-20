@@ -157,8 +157,8 @@ namespace Serverbound.Features
 			// Looked up once: a game version without them is the older shape of this method, not a fault,
 			// and AccessTools would say so in the log on every call.
 			private static bool s_looked;
-			private static FieldInfo s_refreshRate;
-			private static MethodInfo s_apply;
+			private static AccessTools.FieldRef<PresentManager, int> s_refreshRate;
+			private static Action<PresentManager> s_apply;
 
 			static void Postfix(PresentManager __instance)
 			{
@@ -169,15 +169,23 @@ namespace Serverbound.Features
 				if (!s_looked)
 				{
 					s_looked = true;
-					s_refreshRate = typeof(PresentManager).GetField("m_requestedRefreshRate", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-					s_apply = typeof(PresentManager).GetMethod("UpdatePresentSettings", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+					FieldInfo refreshRate = typeof(PresentManager).GetField("m_requestedRefreshRate", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+					MethodInfo apply = typeof(PresentManager).GetMethod("UpdatePresentSettings", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+					if (refreshRate != null && refreshRate.FieldType == typeof(int))
+					{
+						s_refreshRate = AccessTools.FieldRefAccess<PresentManager, int>(refreshRate);
+					}
+					if (apply != null && apply.GetParameters().Length == 0)
+					{
+						s_apply = (Action<PresentManager>)Delegate.CreateDelegate(typeof(Action<PresentManager>), apply);
+					}
 				}
-				if (s_refreshRate == null || !(s_refreshRate.GetValue(__instance) is int current) || current == s_forced)
+				if (s_refreshRate == null || s_refreshRate(__instance) == s_forced)
 				{
 					return;
 				}
-				s_refreshRate.SetValue(__instance, s_forced);
-				s_apply?.Invoke(__instance, null);
+				s_refreshRate(__instance) = s_forced;
+				s_apply?.Invoke(__instance);
 			}
 		}
 

@@ -40,6 +40,12 @@ namespace Serverbound
 			{ nameof(Player.GetPlayerName), AccessTools.Method(typeof(ServerSafe), nameof(LocalPlayerName)) },
 		};
 
+		private static readonly FieldInfo localPlayer = AccessTools.Field(typeof(Player), nameof(Player.m_localPlayer));
+
+		private static bool Replacement(CodeInstruction code) =>
+			code.opcode == OpCodes.Callvirt && code.operand is MethodInfo callee
+			&& callee.DeclaringType.IsAssignableFrom(typeof(Player)) && Replacements.ContainsKey(callee.Name);
+
 		/*
 			Replaces each `ldsfld Player::m_localPlayer; callvirt GetZDOID|GetPlayerID|GetPlayerName`
 			pair with a call to the matching helper, carrying over labels and exception blocks so
@@ -51,31 +57,23 @@ namespace Serverbound
 		*/
 		public static IEnumerable<CodeInstruction> NullSafeLocalPlayer(IEnumerable<CodeInstruction> instructions, MethodBase original, int expected)
 		{
-			FieldInfo localPlayer = AccessTools.Field(typeof(Player), nameof(Player.m_localPlayer));
 			List<CodeInstruction> codes = instructions.ToList();
-			int replaced = 0;
-			for (int i = 0; i < codes.Count - 1; i++)
+			int[] sites = Enumerable.Range(0, codes.Count).Where(i => ILMatch.Shape(codes, i, ILMatch.Loads(localPlayer), Replacement)).ToArray();
+			if (sites.Length != expected)
 			{
-				if (!codes[i].LoadsField(localPlayer)
-					|| codes[i + 1].opcode != OpCodes.Callvirt
-					|| !(codes[i + 1].operand is MethodInfo callee)
-					|| !callee.DeclaringType.IsAssignableFrom(typeof(Player))
-					|| !Replacements.TryGetValue(callee.Name, out MethodInfo helper))
-				{
-					continue;
-				}
-				CodeInstruction call = new CodeInstruction(OpCodes.Call, helper);
+				Plugin.logger.LogWarning($"{original.DeclaringType.Name}.{original.Name}: found {sites.Length} Player.m_localPlayer call(s), expected {expected}. The game changed this method; it was left unchanged and the patch needs reviewing.");
+				return codes;
+			}
+			for (int s = sites.Length - 1; s >= 0; s--)
+			{
+				int i = sites[s];
+				CodeInstruction call = new CodeInstruction(OpCodes.Call, Replacements[((MethodInfo)codes[i + 1].operand).Name]);
 				call.labels.AddRange(codes[i].labels);
 				call.labels.AddRange(codes[i + 1].labels);
 				call.blocks.AddRange(codes[i].blocks);
 				call.blocks.AddRange(codes[i + 1].blocks);
 				codes[i] = call;
 				codes.RemoveAt(i + 1);
-				replaced++;
-			}
-			if (replaced != expected)
-			{
-				Plugin.logger.LogWarning($"{original.DeclaringType.Name}.{original.Name}: replaced {replaced} Player.m_localPlayer call(s), expected {expected}. The game changed this method; the patch needs reviewing.");
 			}
 			return codes;
 		}

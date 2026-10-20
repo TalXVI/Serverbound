@@ -9,6 +9,7 @@ using System.Reflection;
 using UnityEngine;
 using OpCode = System.Reflection.Emit.OpCode;
 using OpCodes = System.Reflection.Emit.OpCodes;
+using static Serverbound.ILMatch;
 
 
 namespace Serverbound.Features
@@ -212,26 +213,19 @@ namespace Serverbound.Features
 		{
 			private static readonly List<Vector3> s_peerPositions = new List<Vector3>();
 			private static int s_peerPositionsFrame = -1;
+			private static readonly MethodInfo distanceSqr = AccessTools.Method(typeof(Utils), nameof(Utils.DistanceSqr), new[] { typeof(Vector3), typeof(Vector3) });
+			private static readonly MethodInfo nearest = AccessTools.Method(typeof(ZNetScene_CreateObjectsSorted_Patch), nameof(NearestPeerDistanceSqr));
 
 			static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
 			{
-				MethodInfo distanceSqr = AccessTools.Method(typeof(Utils), nameof(Utils.DistanceSqr), new[] { typeof(Vector3), typeof(Vector3) });
-				MethodInfo nearest = AccessTools.Method(typeof(ZNetScene_CreateObjectsSorted_Patch), nameof(NearestPeerDistanceSqr));
-				List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
-				int replaced = 0;
-				foreach (CodeInstruction code in codes)
+				List<CodeInstruction> codes = instructions.ToList();
+				int found = codes.Count(code => code.Calls(distanceSqr));
+				if (found != 1)
 				{
-					if (code.Calls(distanceSqr))
-					{
-						code.operand = nearest;
-						replaced++;
-					}
+					Plugin.logger.LogWarning($"{__originalMethod.DeclaringType.Name}.{__originalMethod.Name}: found {found} sort distance call(s), expected 1. The game changed this method; it was left unchanged and the patch needs reviewing.");
+					return codes;
 				}
-				if (replaced != 1)
-				{
-					Plugin.logger.LogWarning($"{__originalMethod.DeclaringType.Name}.{__originalMethod.Name}: replaced {replaced} sort distance call(s), expected 1. The game changed this method; the patch needs reviewing.");
-				}
-				return codes;
+				return codes.Select(code => code.Calls(distanceSqr) ? new CodeInstruction(code) { operand = nearest } : code).ToList();
 			}
 
 			// Same signature as the Utils.DistanceSqr call it replaces; the reference position is only a fallback.
@@ -472,15 +466,16 @@ namespace Serverbound.Features
 			local player's position would throw on every fixed step of an event.
 		*/
 		{
+			private static readonly MethodInfo isAnyPlayerInEventArea = AccessTools.Method(typeof(RandEventSystem), "IsAnyPlayerInEventArea");
+			private static readonly MethodInfo isInsideRandomEventArea = AccessTools.Method(typeof(RandEventSystem), "IsInsideRandomEventArea");
+			private static readonly MethodInfo opImplicit = AccessTools.Method(typeof(UnityEngine.Object), "op_Implicit");
+			private static readonly MethodInfo getTransform = AccessTools.PropertyGetter(typeof(Component), nameof(Component.transform));
+			private static readonly MethodInfo getPosition = AccessTools.PropertyGetter(typeof(Transform), nameof(Transform.position));
+			private static readonly FieldInfo localPlayer = AccessTools.Field(typeof(Player), nameof(Player.m_localPlayer));
+			private static readonly FieldInfo randomEvent = AccessTools.Field(typeof(RandEventSystem), "m_randomEvent");
+
 			static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
 			{
-				MethodInfo isAnyPlayerInEventArea = AccessTools.Method(typeof(RandEventSystem), "IsAnyPlayerInEventArea");
-				MethodInfo isInsideRandomEventArea = AccessTools.Method(typeof(RandEventSystem), "IsInsideRandomEventArea");
-				MethodInfo opImplicit = AccessTools.Method(typeof(UnityEngine.Object), "op_Implicit");
-				MethodInfo getTransform = AccessTools.PropertyGetter(typeof(Component), nameof(Component.transform));
-				MethodInfo getPosition = AccessTools.PropertyGetter(typeof(Transform), nameof(Transform.position));
-				FieldInfo localPlayer = AccessTools.Field(typeof(Player), nameof(Player.m_localPlayer));
-				FieldInfo randomEvent = AccessTools.Field(typeof(RandEventSystem), "m_randomEvent");
 				List<CodeInstruction> codes = instructions.ToList();
 
 				// bool playerInArea = IsAnyPlayerInEventArea(m_randomEvent);
@@ -489,10 +484,9 @@ namespace Serverbound.Features
 
 				// (bool)Player.m_localPlayer, the condition of the block that activates the event
 				int check = -1;
-				for (int i = Math.Max(anyPlayer, 0); i + 2 < codes.Count && loadPlayerInArea != null; i++)
+				for (int i = Math.Max(anyPlayer, 0); i < codes.Count && loadPlayerInArea != null; i++)
 				{
-					if (codes[i].LoadsField(localPlayer) && codes[i + 1].Calls(opImplicit)
-						&& (codes[i + 2].opcode == OpCodes.Brfalse || codes[i + 2].opcode == OpCodes.Brfalse_S))
+					if (Shape(codes, i, Loads(localPlayer), Calls(opImplicit), Is(OpCodes.Brfalse, OpCodes.Brfalse_S)))
 					{
 						check = i + 2;
 						break;
@@ -503,8 +497,7 @@ namespace Serverbound.Features
 				int inside = check >= 0 ? codes.FindIndex(check, code => code.Calls(isInsideRandomEventArea)) : -1;
 				int first = inside - 6;
 				bool insideMatches = first > check
-					&& codes[first].IsLdarg(0) && codes[first + 1].IsLdarg(0) && codes[first + 2].LoadsField(randomEvent)
-					&& codes[first + 3].LoadsField(localPlayer) && codes[first + 4].Calls(getTransform) && codes[first + 5].Calls(getPosition);
+					&& Shape(codes, first, Ldarg(0), Ldarg(0), Loads(randomEvent), Loads(localPlayer), Calls(getTransform), Calls(getPosition), Calls(isInsideRandomEventArea));
 
 				if (loadPlayerInArea == null || check < 0 || !insideMatches)
 				{
@@ -514,7 +507,7 @@ namespace Serverbound.Features
 					return codes;
 				}
 
-				codes[check].opcode = codes[check].opcode == OpCodes.Brfalse_S ? OpCodes.Brtrue_S : OpCodes.Brtrue;
+				codes[check] = new CodeInstruction(codes[check]) { opcode = codes[check].opcode == OpCodes.Brfalse_S ? OpCodes.Brtrue_S : OpCodes.Brtrue };
 				for (int i = first; i <= inside; i++)
 				{
 					loadPlayerInArea.labels.AddRange(codes[i].labels);
@@ -572,14 +565,19 @@ namespace Serverbound.Features
 			Both sites or neither: if one is missing the method is left as it is, with a warning.
 		*/
 		{
+			private static readonly FieldInfo localPlayer = AccessTools.Field(typeof(Player), nameof(Player.m_localPlayer));
+			private static readonly MethodInfo ownerEquality = AccessTools.Method(typeof(UnityEngine.Object), "op_Equality");
+			private static readonly MethodInfo currentSpawners = AccessTools.Method(typeof(RandEventSystem), nameof(RandEventSystem.GetCurrentSpawners));
+			private static readonly MethodInfo serverSpawners = AccessTools.Method(typeof(Core), nameof(Core.GetCurrentSpawners));
+
 			static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
 			{
 				List<CodeInstruction> original = instructions.ToList();
 				CodeMatcher matcher = new CodeMatcher(original)
 					.MatchForward(true,
-						new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(Player), nameof(Player.m_localPlayer))),
+						new CodeMatch(OpCodes.Ldsfld, localPlayer),
 						new CodeMatch(OpCodes.Ldnull),
-						new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(UnityEngine.Object), "op_Equality")),
+						new CodeMatch(OpCodes.Call, ownerEquality),
 						new CodeMatch(instruction => instruction.opcode == OpCodes.Brfalse || instruction.opcode == OpCodes.Brfalse_S)
 					);
 				bool check = matcher.IsValid;
@@ -588,18 +586,21 @@ namespace Serverbound.Features
 					// if (Player.m_localPlayer == null) return;  ->  if (Player.m_localPlayer != null) return;
 					matcher.Opcode = matcher.Opcode == OpCodes.Brfalse_S ? OpCodes.Brtrue_S : OpCodes.Brtrue;
 					matcher.MatchForward(false,
-						new CodeMatch(OpCodes.Callvirt, AccessTools.Method(typeof(RandEventSystem), nameof(RandEventSystem.GetCurrentSpawners)))
+						new CodeMatch(OpCodes.Callvirt, currentSpawners)
 					);
 				}
-				if (!check || !matcher.IsValid)
+				// Insert(Ldarg_0) lands before the call, so a branch or block targeting it would skip the argument.
+				if (!check || !matcher.IsValid || !ILMatch.Plain(matcher.Instruction))
 				{
-					string missing = !check ? "the local player check" : "the RandEventSystem.GetCurrentSpawners call";
-					Plugin.logger.LogWarning($"{__originalMethod.DeclaringType.Name}.{__originalMethod.Name}: {missing} not found; left unchanged, so the server will not spawn creatures. The game changed this method; the patch needs reviewing.");
+					string missing = !check ? "the local player check not found"
+						: !matcher.IsValid ? "the RandEventSystem.GetCurrentSpawners call not found"
+						: "the RandEventSystem.GetCurrentSpawners call carries a branch label";
+					Plugin.logger.LogWarning($"{__originalMethod.DeclaringType.Name}.{__originalMethod.Name}: {missing}; left unchanged, so the server will not spawn creatures. The game changed this method; the patch needs reviewing.");
 					return original;
 				}
 				// RandEventSystem.instance.GetCurrentSpawners()  ->  Core.GetCurrentSpawners(RandEventSystem.instance, this)
 				matcher.Opcode = OpCodes.Call;
-				matcher.Operand = AccessTools.Method(typeof(Core), nameof(Core.GetCurrentSpawners));
+				matcher.Operand = serverSpawners;
 				matcher.Insert(new CodeInstruction(OpCodes.Ldarg_0));
 				return matcher.InstructionEnumeration();
 			}

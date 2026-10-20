@@ -37,9 +37,11 @@ namespace Serverbound.Features
 		[HarmonyPatch(typeof(SmokeSpawner), "Spawn")]
 		public static class SmokeSpawner_Spawn_Patch
 		{
+			private static readonly FieldInfo localPlayer = AccessTools.Field(typeof(Player), nameof(Player.m_localPlayer));
+			private static readonly MethodInfo watcher = AccessTools.Method(typeof(SmokeSpawner_Spawn_Patch), nameof(Watcher));
+
 			static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
 			{
-				FieldInfo localPlayer = AccessTools.Field(typeof(Player), nameof(Player.m_localPlayer));
 				List<CodeInstruction> codes = instructions.ToList();
 				List<CodeInstruction> reads = codes.FindAll(code => code.LoadsField(localPlayer));
 				if (reads.Count != 1)
@@ -52,7 +54,7 @@ namespace Serverbound.Features
 				CodeInstruction read = reads[0];
 				read.opcode = OpCodes.Ldarg_0;
 				read.operand = null;
-				codes.Insert(codes.IndexOf(read) + 1, new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(SmokeSpawner_Spawn_Patch), nameof(Watcher))));
+				codes.Insert(codes.IndexOf(read) + 1, new CodeInstruction(OpCodes.Call, watcher));
 				return codes;
 			}
 

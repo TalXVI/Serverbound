@@ -164,9 +164,10 @@ namespace Serverbound.Compatibility
             if (!sites.TryGetValue(original.Name, out Site? site) || site.Target != original) return source;
             try
             {
+                List<CodeInstruction> copy = source.Select(instruction => new CodeInstruction(instruction)).ToList();
                 List<CodeInstruction> rewritten =
-                    ((IEnumerable<CodeInstruction>)site.VendorTranspiler.Invoke(null, new object[] { source })!).ToList();
-                RequireAuditedRewrite(site, source, rewritten);
+                    ((IEnumerable<CodeInstruction>)site.VendorTranspiler.Invoke(null, new object[] { copy })!).ToList();
+                RequireAuditedRewrite(site, source, copy, rewritten);
                 site.Rewritten = true;
                 site.Failure = null;
                 return rewritten;
@@ -185,7 +186,8 @@ namespace Serverbound.Compatibility
             }
         }
 
-        private static void RequireAuditedRewrite(Site site, List<CodeInstruction> source, List<CodeInstruction> rewritten)
+        private static void RequireAuditedRewrite(Site site, List<CodeInstruction> source, List<CodeInstruction> copy,
+            List<CodeInstruction> rewritten)
         {
             if (rewritten.Count != source.Count)
                 throw new NotSupportedException("The vendor transpiler changed the instruction count.");
@@ -195,7 +197,7 @@ namespace Serverbound.Compatibility
                 CodeInstruction before = source[index], after = rewritten[index];
                 if (!(before.opcode == OpCodes.Ldc_R4 && before.operand is float constant && Math.Abs(constant) == VanillaLimit))
                 {
-                    if (!ReferenceEquals(before, after))
+                    if (!ReferenceEquals(copy[index], after) || !Same(before, after))
                         throw new NotSupportedException("The vendor transpiler changed an instruction outside the limits.");
                     continue;
                 }
@@ -210,5 +212,10 @@ namespace Serverbound.Compatibility
             if (next != site.Limits.Length)
                 throw new NotSupportedException($"Expected {site.Limits.Length} limit constants, found {next}.");
         }
+
+        private static bool Same(CodeInstruction before, CodeInstruction after) =>
+            after.opcode == before.opcode && Equals(after.operand, before.operand)
+            && before.labels.SequenceEqual(after.labels)
+            && before.blocks.Select(b => (b.blockType, b.catchType)).SequenceEqual(after.blocks.Select(b => (b.blockType, b.catchType)));
     }
 }

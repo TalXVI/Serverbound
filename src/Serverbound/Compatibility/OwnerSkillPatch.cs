@@ -33,13 +33,27 @@ namespace Serverbound.Compatibility
         private static bool prepared, server, installed, coreOnServer;
         private static float nextPublish;
         private static float nextHello;
-        private static FieldInfo view = null!, animalSkill = null!, animalRange = null!, animalEnabled = null!, miningEnabled = null!, woodEnabled = null!, voyagingSkill = null!;
+        private static AccessTools.FieldRef<Skills.SkillType> animalSkill = null!, voyagingSkill = null!;
+        private static AccessTools.FieldRef<ConfigEntry<float>> animalRange = null!;
+        private static AccessTools.FieldRef<ConfigEntry<bool>> animalEnabled = null!, miningEnabled = null!, woodEnabled = null!;
         private static MethodInfo treeBonus = null!;
+        private static Action<TreeBase> treeDrops = null!;
         private static MethodInfo? bonusFactorRead;
         private static Func<float, ConfigEntry<bool>, float>? capFactor;
         [ThreadStatic] private static Player? current;
-        
-        private static readonly FieldInfo shipPlayers = AccessTools.Field(typeof(Ship), "m_players");
+
+        private static readonly FieldInfo local = AccessTools.Field(typeof(Player), "m_localPlayer");
+        private static readonly MethodInfo factor = AccessTools.Method(typeof(Character), "GetSkillFactor");
+        private static readonly MethodInfo level = AccessTools.Method(typeof(Character), "GetSkillLevel");
+        private static readonly MethodInfo raise = AccessTools.Method(typeof(Character), "RaiseSkill");
+        private static readonly MethodInfo coroutine = AccessTools.Method(typeof(MonoBehaviour), "StartCoroutine", new[] { typeof(IEnumerator) });
+        private static readonly MethodInfo actor = AccessTools.Method(typeof(OwnerSkillPatch), nameof(Actor));
+        private static readonly MethodInfo factorHook = AccessTools.Method(typeof(OwnerSkillPatch), nameof(Factor));
+        private static readonly MethodInfo factorCap = AccessTools.Method(typeof(OwnerSkillPatch), nameof(FactorWithCap));
+        private static readonly MethodInfo levelHook = AccessTools.Method(typeof(OwnerSkillPatch), nameof(Level));
+        private static readonly MethodInfo raiseHook = AccessTools.Method(typeof(OwnerSkillPatch), nameof(Raise));
+        private static readonly MethodInfo coroutineHook = AccessTools.Method(typeof(OwnerSkillPatch), nameof(RunCoroutine));
+        private static readonly MethodInfo treeDropsHook = AccessTools.Method(typeof(OwnerSkillPatch), nameof(TreeDrops));
 
         internal sealed class Scope : IDisposable
         {
@@ -68,14 +82,15 @@ namespace Serverbound.Compatibility
                 return;
             }
             impact = skills;
-            view = AccessTools.Field(typeof(Character), "m_nview");
-            animalSkill = AccessTools.Field(Guard.Type(skills, "ImpactfulSkills.patches.AnimalWhisper"), "AnimalHandling");
-            animalRange = AccessTools.Field(Guard.Type(skills, "ImpactfulSkills.ValConfig"), "AnimalHandlingLootRange");
-            animalEnabled = AccessTools.Field(Guard.Type(skills, "ImpactfulSkills.ValConfig"), "EnableAnimalWhisper");
-            miningEnabled = AccessTools.Field(Guard.Type(skills, "ImpactfulSkills.ValConfig"), "EnableMining");
-            woodEnabled = AccessTools.Field(Guard.Type(skills, "ImpactfulSkills.ValConfig"), "EnableWoodcutting");
-            voyagingSkill = AccessTools.Field(Guard.Type(skills, "ImpactfulSkills.patches.Voyaging"), "VoyagingSkill");
+            Type valConfig = Guard.Type(skills, "ImpactfulSkills.ValConfig");
+            animalSkill = StaticRef<Skills.SkillType>(Guard.Type(skills, "ImpactfulSkills.patches.AnimalWhisper"), "AnimalHandling");
+            animalRange = StaticRef<ConfigEntry<float>>(valConfig, "AnimalHandlingLootRange");
+            animalEnabled = StaticRef<ConfigEntry<bool>>(valConfig, "EnableAnimalWhisper");
+            miningEnabled = StaticRef<ConfigEntry<bool>>(valConfig, "EnableMining");
+            woodEnabled = StaticRef<ConfigEntry<bool>>(valConfig, "EnableWoodcutting");
+            voyagingSkill = StaticRef<Skills.SkillType>(Guard.Type(skills, "ImpactfulSkills.patches.Voyaging"), "VoyagingSkill");
             treeBonus = Guard.Method(Guard.Type(skills, "ImpactfulSkills.patches.Woodcutting"), "IncreaseTreeDrops", typeof(void), typeof(TreeBase));
+            treeDrops = (Action<TreeBase>)Delegate.CreateDelegate(typeof(Action<TreeBase>), treeBonus);
             Type? caps = skills.GetType("ImpactfulSkills.SkillCaps");
             if (caps != null)
             {
@@ -192,11 +207,18 @@ namespace Serverbound.Compatibility
             }
         }
 
-        private static Skills.SkillType Animal => (Skills.SkillType)animalSkill.GetValue(null);
-        private static Skills.SkillType Voyaging => (Skills.SkillType)voyagingSkill.GetValue(null);
-        private static float LootRange => ((ConfigEntry<float>)animalRange.GetValue(null)).Value;
-        private static bool Configured(FieldInfo field) => ((ConfigEntry<bool>)field.GetValue(null)).Value;
-        private static ZDO? PlayerZdo(Player player) => (view.GetValue(player) as ZNetView)?.GetZDO();
+        private static AccessTools.FieldRef<T> StaticRef<T>(Type type, string name)
+        {
+            FieldInfo? field = AccessTools.Field(type, name);
+            if (field == null || !field.IsStatic || field.FieldType != typeof(T)) throw new MissingFieldException(type.FullName, name);
+            return AccessTools.StaticFieldRefAccess<T>(field);
+        }
+
+        private static Skills.SkillType Animal => animalSkill();
+        private static Skills.SkillType Voyaging => voyagingSkill();
+        private static float LootRange => animalRange().Value;
+        private static bool Configured(AccessTools.FieldRef<ConfigEntry<bool>> field) => field().Value;
+        private static ZDO? PlayerZdo(Player player) => player.m_nview?.GetZDO();
         private static int Key(Skills.SkillType skill) => skill == Skills.SkillType.Pickaxes ? MiningKey
             : skill == Skills.SkillType.WoodCutting ? WoodKey : skill == Animal ? AnimalKey
             : throw new NotSupportedException("Unexpected owner-side skill " + skill);
@@ -304,22 +326,17 @@ namespace Serverbound.Compatibility
 
         internal static IEnumerable<CodeInstruction> RewriteContext(IEnumerable<CodeInstruction> instructions)
         {
-            FieldInfo local = AccessTools.Field(typeof(Player), "m_localPlayer");
-            MethodInfo factor = AccessTools.Method(typeof(Character), "GetSkillFactor");
-            MethodInfo level = AccessTools.Method(typeof(Character), "GetSkillLevel");
-            MethodInfo raise = AccessTools.Method(typeof(Character), "RaiseSkill");
-            MethodInfo coroutine = AccessTools.Method(typeof(MonoBehaviour), "StartCoroutine", new[] { typeof(IEnumerator) });
             foreach (CodeInstruction source in instructions)
             {
                 var code = new CodeInstruction(source);
                 if (code.opcode == OpCodes.Ldsfld && Equals(code.operand, local))
-                { code.opcode = OpCodes.Call; code.operand = AccessTools.Method(typeof(OwnerSkillPatch), nameof(Actor)); }
-                else if (code.Calls(factor)) { code.opcode = OpCodes.Call; code.operand = AccessTools.Method(typeof(OwnerSkillPatch), nameof(Factor)); }
+                { code.opcode = OpCodes.Call; code.operand = actor; }
+                else if (code.Calls(factor)) { code.opcode = OpCodes.Call; code.operand = factorHook; }
                 else if (bonusFactorRead != null && code.Calls(bonusFactorRead))
-                { code.opcode = OpCodes.Call; code.operand = AccessTools.Method(typeof(OwnerSkillPatch), nameof(FactorWithCap)); }
-                else if (code.Calls(level)) { code.opcode = OpCodes.Call; code.operand = AccessTools.Method(typeof(OwnerSkillPatch), nameof(Level)); }
-                else if (code.Calls(raise)) { code.opcode = OpCodes.Call; code.operand = AccessTools.Method(typeof(OwnerSkillPatch), nameof(Raise)); }
-                else if (code.Calls(coroutine)) { code.opcode = OpCodes.Call; code.operand = AccessTools.Method(typeof(OwnerSkillPatch), nameof(RunCoroutine)); }
+                { code.opcode = OpCodes.Call; code.operand = factorCap; }
+                else if (code.Calls(level)) { code.opcode = OpCodes.Call; code.operand = levelHook; }
+                else if (code.Calls(raise)) { code.opcode = OpCodes.Call; code.operand = raiseHook; }
+                else if (code.Calls(coroutine)) { code.opcode = OpCodes.Call; code.operand = coroutineHook; }
                 yield return code;
             }
         }
@@ -334,7 +351,7 @@ namespace Serverbound.Compatibility
             bool wood = __instance is TreeBase || __instance is TreeLog;
             if (__instance is Destructible)
             {
-                int kind = (int)AccessTools.Field(typeof(Destructible), "m_destructibleType").GetValue(__instance);
+                int kind = (int)((Destructible)__instance).m_destructibleType;
                 mining = kind == 1; wood = kind == 2;
             }
             if (player != null && ((mining && Configured(miningEnabled) && !Ready(player, Skills.SkillType.Pickaxes))
@@ -403,29 +420,33 @@ namespace Serverbound.Compatibility
             __state = Enabled ? new Scope(Aboard(__instance.GetComponent<Ship>())) : null;
         private static void BeginShipImpact(ImpactEffect __instance, out Scope? __state) =>
             __state = Enabled ? new Scope(Aboard(__instance.GetComponent<Ship>())) : null;
-        private static Player? Aboard(Ship? ship) => ship ? Best((List<Player>)shipPlayers.GetValue(ship), Voyaging) : null;
+        private static Player? Aboard(Ship? ship) => ship ? Best(ship.m_players, Voyaging) : null;
         private static bool OncePerMiningArea(MineRock5 __0, int __2, float __3)
         {
             if ((!server && !coreOnServer) || (server && !Enabled)) return true;
-            ZNetView? nview = AccessTools.Field(typeof(MineRock5), "m_nview").GetValue(__0) as ZNetView;
+            ZNetView? nview = __0.m_nview;
             ZDO? zdo = nview?.GetZDO();
             if (zdo == null || zdo.GetOwner() != ServerId()) return true;
             // SetAreaHealth is broadcast. Clients must not each spawn the owner's bonus.
             if (!server) return false;
             return __3 <= 0 && current != null && minedAreas.Add((zdo.m_uid, __2));
         }
-        private static void TreeDrops(TreeBase tree) => treeBonus.Invoke(null, new object[] { tree });
+        private static void TreeDrops(TreeBase tree) => treeDrops(tree);
 
         internal static IEnumerable<CodeInstruction> FixTreeAnchor(IEnumerable<CodeInstruction> instructions)
         {
             var codes = instructions.Select(c => new CodeInstruction(c)).ToList();
             if (codes.Count < 3) throw new NotSupportedException("TreeBase damage body changed; refusing to move drop logic.");
-            var matches = Enumerable.Range(0, codes.Count - 2).Where(i => codes[i].opcode == OpCodes.Ldloc_0
-                && codes[i + 1].opcode == OpCodes.Ldc_R4 && Equals(codes[i + 1].operand, 0f)
-                && (codes[i + 2].opcode == OpCodes.Bgt_Un || codes[i + 2].opcode == OpCodes.Bgt_Un_S)).ToArray();
+            var matches = Enumerable.Range(0, codes.Count).Where(i => ILMatch.Shape(codes, i,
+                ILMatch.Is(OpCodes.Ldloc_0),
+                c => c.opcode == OpCodes.Ldc_R4 && Equals(c.operand, 0f),
+                ILMatch.Is(OpCodes.Bgt_Un, OpCodes.Bgt_Un_S))).ToArray();
             if (matches.Length != 2) throw new NotSupportedException("TreeBase damage health branches changed; refusing to move drop logic.");
-            codes.InsertRange(matches[1] + 3, new[] { new CodeInstruction(OpCodes.Ldarg_0),
-                CodeInstruction.Call(typeof(OwnerSkillPatch), nameof(TreeDrops)) });
+            int site = matches[1] + 3;
+            if (site >= codes.Count || !ILMatch.Plain(codes[site]))
+                throw new NotSupportedException("TreeBase damage felling branch carries a label; refusing to move drop logic.");
+            codes.InsertRange(site, new[] { new CodeInstruction(OpCodes.Ldarg_0),
+                new CodeInstruction(OpCodes.Call, treeDropsHook) });
             return codes;
         }
 

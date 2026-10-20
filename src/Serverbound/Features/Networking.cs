@@ -5,6 +5,7 @@ using Serverbound.Settings;
 using Steamworks;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
@@ -44,11 +45,17 @@ namespace Serverbound.Features
 			best. Both uses of the constant are replaced by the configured size.
 		*/
 		{
+			private static readonly MethodInfo queueSize = AccessTools.Method(typeof(Networking), nameof(QueueSize));
+
 			static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
 			{
-				MethodInfo queueSize = AccessTools.Method(typeof(Networking), nameof(QueueSize));
 				List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
-				int replaced = 0;
+				int found = codes.Count(code => code.LoadsConstant(VanillaQueueSize));
+				if (found != 2)
+				{
+					Plugin.logger.LogWarning($"{__originalMethod.DeclaringType.Name}.{__originalMethod.Name}: found {found} send queue limit(s), expected 2. The game changed this method; it was left unchanged and the patch needs reviewing.");
+					return codes;
+				}
 				for (int i = 0; i < codes.Count; i++)
 				{
 					if (codes[i].LoadsConstant(VanillaQueueSize))
@@ -57,12 +64,7 @@ namespace Serverbound.Features
 						call.labels.AddRange(codes[i].labels);
 						call.blocks.AddRange(codes[i].blocks);
 						codes[i] = call;
-						replaced++;
 					}
-				}
-				if (replaced != 2)
-				{
-					Plugin.logger.LogWarning($"{__originalMethod.DeclaringType.Name}.{__originalMethod.Name}: replaced {replaced} send queue limit(s), expected 2. The game changed this method; the patch needs reviewing.");
 				}
 				return codes;
 			}

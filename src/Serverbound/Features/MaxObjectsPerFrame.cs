@@ -3,6 +3,7 @@ using Serverbound.FeatureModel;
 using HarmonyLib;
 using MonoMod.Cil;
 using Serverbound.Settings;
+using System.Reflection;
 
 using OC = Mono.Cecil.Cil.OpCodes;
 
@@ -30,6 +31,8 @@ namespace Serverbound.Features
 			Originally set to 100, see `Configuration.maxObjectsPerFrame` for the new value.
 		 */
 		{
+			private static readonly MethodInfo maxCreated = AccessTools.Method(typeof(MaxObjectsPerFrame), nameof(MaxObjectsPerFrame.GetMaxCreatedPerFrame));
+
 			public static void ILManipulator(ILContext il)
 			{
 				new ILCursor(il)
@@ -40,9 +43,7 @@ namespace Serverbound.Features
 						i => i.MatchLdloca(1),
 						i => i.MatchCall<ZNetScene>("CreateObjectsSorted")
 					)
-					.Emit(OC.Call, AccessTools.Method(
-						typeof(MaxObjectsPerFrame),
-						nameof(MaxObjectsPerFrame.GetMaxCreatedPerFrame)))
+					.Emit(OC.Call, maxCreated)
 					.Emit(OC.Stloc_0);
 			}
 		}
