@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.14
+
+- Turns off OdinShip customization and ballista-mode routing if another mod later changes the same OdinShip input code, and logs `OdinShip: NO LONGER APPLIED`. OdinShip's own owner-only controls take over, and a ship owner rejects routed change requests instead of applying them.
+- Leaves a game method unchanged, with a warning in the log, when it no longer has the shape a patch expects. Several patches used to rewrite whatever matches they found, so a game update could leave a method half patched.
+- Reads ImpactfulSkills settings and game fields through compiled accessors instead of reflection on every mining, woodcutting, taming, and boat-damage hit.
+
 ## 0.1.13
 
 - Removes ComfortTweaks 3.3.11's client-only rested check from dedicated-server portal triggers. Nonplayer colliders previously caused repeated null-reference exceptions. Clients keep the existing portal rule.
