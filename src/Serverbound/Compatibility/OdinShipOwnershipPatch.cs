@@ -47,7 +47,7 @@ namespace Serverbound.Compatibility
         private static ConditionalWeakTable<ZNetView, object> registeredViews = new ConditionalWeakTable<ZNetView, object>();
         private static Assembly? vendorAssembly;
         private static Type? customizationType;
-        private static FieldInfo? customizationViewField;
+        private static AccessTools.FieldRef<object, ZNetView>? customizationView;
         private static FieldInfo? figureheadsField;
         private static FieldInfo? sailsField;
         private static FieldInfo? shieldsField;
@@ -83,7 +83,7 @@ namespace Serverbound.Compatibility
             turretInputRewritten = null;
             vendorAssembly = null;
             customizationType = null;
-            customizationViewField = null;
+            customizationView = null;
             figureheadsField = null;
             sailsField = null;
             shieldsField = null;
@@ -122,7 +122,7 @@ namespace Serverbound.Compatibility
                 MethodInfo turretInput = Guard.Method(turretModePatch, "Player_Update_Postfix", typeof(void), typeof(Player));
 
                 customizationType = customization;
-                customizationViewField = viewField;
+                customizationView = AccessTools.FieldRefAccess<object, ZNetView>(viewField);
                 figureheadsField = decorationField;
                 sailsField = sailField;
                 shieldsField = shieldField;
@@ -151,7 +151,7 @@ namespace Serverbound.Compatibility
                 pending = false;
                 vendorAssembly = null;
                 customizationType = null;
-                customizationViewField = null;
+                customizationView = null;
                 figureheadsField = null;
                 sailsField = null;
                 shieldsField = null;
@@ -242,7 +242,7 @@ namespace Serverbound.Compatibility
             registeredViews = new ConditionalWeakTable<ZNetView, object>();
             vendorAssembly = null;
             customizationType = null;
-            customizationViewField = null;
+            customizationView = null;
             figureheadsField = null;
             sailsField = null;
             shieldsField = null;
@@ -285,25 +285,38 @@ namespace Serverbound.Compatibility
             return true;
         }
 
+        private static readonly MethodInfo ownerCheck = AccessTools.Method(typeof(ZNetView), nameof(ZNetView.IsOwner), Type.EmptyTypes);
+        private static readonly MethodInfo customizationHelper = AccessTools.Method(typeof(OdinShipOwnershipPatch), nameof(CanUseCustomizationInputs), new[] { typeof(ZNetView) });
+        private static readonly MethodInfo turretHelper = AccessTools.Method(typeof(OdinShipOwnershipPatch), nameof(TryRouteTurretMode), new[] { typeof(ZNetView) });
+
         private static IEnumerable<CodeInstruction> CustomizationInputGate(IEnumerable<CodeInstruction> instructions)
         {
-            return ReplaceOwnerCheck(instructions, nameof(CanUseCustomizationInputs), out customizationInputRewritten);
+            return ReplaceOwnerCheck(instructions, customizationHelper, "customization input", out customizationInputRewritten);
         }
 
         private static IEnumerable<CodeInstruction> TurretInputGate(IEnumerable<CodeInstruction> instructions)
         {
-            return ReplaceOwnerCheck(instructions, nameof(TryRouteTurretMode), out turretInputRewritten);
+            return ReplaceOwnerCheck(instructions, turretHelper, "turret input", out turretInputRewritten);
         }
 
-        private static IEnumerable<CodeInstruction> ReplaceOwnerCheck(IEnumerable<CodeInstruction> instructions, string helperName,
-            out bool? rewritten)
+        private static IEnumerable<CodeInstruction> ReplaceOwnerCheck(IEnumerable<CodeInstruction> instructions, MethodInfo helper,
+            string label, out bool? rewritten)
         {
             var codes = instructions.Select(code => new CodeInstruction(code)).ToList();
-            MethodInfo ownerCheck = AccessTools.Method(typeof(ZNetView), nameof(ZNetView.IsOwner), Type.EmptyTypes);
             rewritten = codes.Count(code => code.Calls(ownerCheck)) == 1;
-            if (rewritten != true) return codes;
+            if (rewritten != true)
+            {
+                if (installed)
+                {
+                    installed = false;
+                    pendingChanges.Clear();
+                    pendingNames.Clear();
+                    CompatibilityInstaller.Error("OdinShip: NO LONGER APPLIED; a later patch changed the " + label
+                        + " owner check; vendor ship controls retained.");
+                }
+                return codes;
+            }
 
-            MethodInfo helper = AccessTools.Method(typeof(OdinShipOwnershipPatch), helperName, new[] { typeof(ZNetView) });
             foreach (CodeInstruction code in codes)
             {
                 if (code.Calls(ownerCheck))
@@ -403,10 +416,10 @@ namespace Serverbound.Compatibility
 
         private static void RegisterShipRpcs(object __instance)
         {
-            if (!installed || customizationViewField == null) return;
+            if (!installed || customizationView == null) return;
             try
             {
-                ZNetView? view = customizationViewField.GetValue(__instance) as ZNetView;
+                ZNetView? view = customizationView(__instance);
                 EnsureRpcRegistration(view);
             }
             catch (Exception error)
@@ -473,6 +486,11 @@ namespace Serverbound.Compatibility
         private static void HandleChangeRequest(ZNetView view, long sender, int requestId, int actionValue)
         {
             if (requestId <= 0) return;
+            if (!installed)
+            {
+                Reply(view, sender, requestId, false, "Owner-routed ship changes are unavailable on this ship owner.");
+                return;
+            }
             if (!Enum.IsDefined(typeof(ChangeAction), actionValue))
             {
                 Reply(view, sender, requestId, false, "Unsupported ship change.");
@@ -580,7 +598,7 @@ namespace Serverbound.Compatibility
                 ShipControlls? controls = ship.m_shipControlls;
                 object? customization = customizationType != null ? view.GetComponent(customizationType) : null;
                 if (controls == null || !ReferenceEquals(controls.m_ship, ship) || !BelongsToShip(view, ship, controls)
-                    || customization == null || !ReferenceEquals(customizationViewField?.GetValue(customization), view)) return false;
+                    || customization == null || customizationView == null || !ReferenceEquals(customizationView(customization), view)) return false;
                 anchor = controls.GetPosition();
                 return true;
             }
@@ -627,8 +645,8 @@ namespace Serverbound.Compatibility
         private static bool TrackNameRequest(object __instance, string text, out PendingRequest? __state)
         {
             __state = null;
-            if (!installed || customizationViewField == null) return true;
-            ZNetView? view = customizationViewField.GetValue(__instance) as ZNetView;
+            if (!installed || customizationView == null) return true;
+            ZNetView? view = customizationView(__instance);
             if (view == null || !view.IsValid() || view.GetZDO() == null)
             {
                 ShowMessage("This ship is unavailable.");
@@ -676,8 +694,8 @@ namespace Serverbound.Compatibility
         private static bool ValidateNameRequest(object __instance, long sender, string name, out bool __state)
         {
             __state = false;
-            if (!installed || customizationViewField == null) return true;
-            ZNetView? view = customizationViewField.GetValue(__instance) as ZNetView;
+            if (!installed || customizationView == null) return true;
+            ZNetView? view = customizationView(__instance);
             string failure = name == null ? "The ship name is invalid." : "Ship ownership or access changed. Try again.";
             string rejection = string.Empty;
             if (view != null && TryAuthorize(view, sender, InteractionKind.Controls, out _, out rejection))
@@ -697,8 +715,8 @@ namespace Serverbound.Compatibility
 
         private static void CompleteNameRequest(object __instance, long sender, bool __state)
         {
-            if (!__state || customizationViewField == null) return;
-            ZNetView? view = customizationViewField.GetValue(__instance) as ZNetView;
+            if (!__state || customizationView == null) return;
+            ZNetView? view = customizationView(__instance);
             Reply(view, sender, 0, true, "Ship name updated.");
         }
 

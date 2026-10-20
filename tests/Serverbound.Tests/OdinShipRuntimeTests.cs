@@ -151,6 +151,32 @@ internal static class OdinShipRuntimeTests
                 "explicit profile permission did not authorize the receiver");
         });
 
+        Case("stops custom writers and pending requests when a later patch disables routing", scene =>
+        {
+            scene.Peer(100);
+            Player.m_localPlayer = scene.Requester;
+            scene.CycleSail();
+            var request = scene.Messages.Single();
+            Check(scene.PendingChanges == 1, "fixture did not create a pending request");
+            var foreign = new Harmony("Serverbound.Tests.OdinShip.ForeignOwnerCheck");
+            try
+            {
+                foreign.Patch(AccessTools.Method(vendor.GetType("OdinShip.ShipCustomizationPatch", true), "Player_Update_Postfix"),
+                    transpiler: new HarmonyMethod(AccessTools.Method(typeof(OdinShipRuntimeTests), nameof(ForeignOwnerCheck))) { priority = Priority.First });
+                Check(!OdinShipOwnershipPatch.IsInstalled && scene.Errors.Single().StartsWith("OdinShip: NO LONGER APPLIED"),
+                    "later owner-check rewrite did not disable the group: " + string.Join("; ", scene.Errors));
+                Check(scene.PendingChanges == 0 && scene.PendingNames == 0, "disabled group kept requests that no longer time out");
+                scene.Peer(900);
+                Player.m_localPlayer = null;
+                scene.Messages.Clear();
+                scene.Deliver(100, request.Name, request.Args);
+                Check(scene.View.GetZDO().GetInt("odinship_sail_index") == 0
+                    && scene.Messages.Single().Name == ResultRpc && !(bool)scene.Messages.Single().Args[1],
+                    "registered custom RPC wrote the ship after the group was disabled");
+            }
+            finally { foreign.UnpatchSelf(); }
+        });
+
         Case("routes turret mode and rejects invalid actions and ownership handoff", scene =>
         {
             scene.View.GetZDO().Set("odinship_turret_mode", 2);
@@ -678,6 +704,18 @@ internal static class OdinShipRuntimeTests
     private static HarmonyMethod TestHook(string name) => new HarmonyMethod(AccessTools.Method(typeof(OdinShipRuntimeTests), name));
     private static bool Skip() => false;
     private static void VendorHook() { }
+    private static bool ForeignOwner(ZNetView view) => view.IsOwner();
+    private static IEnumerable<CodeInstruction> ForeignOwnerCheck(IEnumerable<CodeInstruction> instructions)
+    {
+        MethodInfo owner = AccessTools.Method(typeof(ZNetView), nameof(ZNetView.IsOwner));
+        MethodInfo helper = AccessTools.Method(typeof(OdinShipRuntimeTests), nameof(ForeignOwner));
+        foreach (CodeInstruction source in instructions)
+        {
+            var code = new CodeInstruction(source);
+            if (code.Calls(owner)) { code.opcode = OpCodes.Call; code.operand = helper; }
+            yield return code;
+        }
+    }
     private static bool PeerId(ref long __result) { __result = current!.LocalPeer; return false; }
     private static bool Transform(Component __instance, ref Transform __result)
     {
