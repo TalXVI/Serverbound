@@ -1,9 +1,11 @@
 """Hash the reviewed source and local inputs without recording private paths."""
 import hashlib
+import io
 import json
 import os
 import platform
 import subprocess
+import tarfile
 import zlib
 from pathlib import Path
 from tooling import ROOT, managed_path
@@ -21,6 +23,22 @@ def sources(root=ROOT):
             continue
         files[name] = sha(path.read_bytes())
     return files
+
+def committed_sources(root, rev):
+    """Hash a commit's files as a checkout would write them, ignoring the working tree."""
+    archive = subprocess.check_output(["git", "archive", "--format=tar", rev], cwd=root)
+    with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
+        return {member.name: sha(tar.extractfile(member).read()) for member in tar.getmembers()
+                if member.isfile() and member.name != "package/validated-build.json"}
+
+def compat_record(root, rev, dll_hash):
+    record = json.loads(subprocess.check_output(["git", "show", rev + ":package/validated-build.json"], cwd=root))
+    if record["sha256"] != dll_hash:
+        raise RuntimeError("DeepNorthCompat candidate differs from its validated package record at " + rev + ".")
+    if record["sourceFiles"] != committed_sources(root, rev):
+        raise RuntimeError("DeepNorthCompat source at " + rev + " changed after its full-suite validation. "
+                           "Set SERVERBOUND_COMPAT_REF to the release tag that matches the DLL.")
+    return record
 
 def record(mods, client, server):
     files = sources()
@@ -45,15 +63,8 @@ def record(mods, client, server):
         raise RuntimeError("Expected at most one audited OdinShip input.")
     if odin_matches:
         inputs["OdinShip.dll"] = sha(odin_matches[0].read_bytes())
-    compat_root = Path(os.environ.get("SERVERBOUND_COMPAT_REPO", ROOT.parent / "DeepNorthCompat"))
-    compat_record = json.loads((compat_root / "package/validated-build.json").read_text())
-    if compat_record["sha256"] != inputs["DeepNorthCompat.dll"]:
-        raise RuntimeError("DeepNorthCompat candidate differs from its validated package record.")
-    compat_names = subprocess.check_output(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], cwd=compat_root).decode().split("\0")
-    compat_files = {name: sha((compat_root / name).read_bytes()) for name in sorted(set(compat_names))
-                    if name and name != "package/validated-build.json" and (compat_root / name).is_file()}
-    if compat_record["sourceFiles"] != compat_files:
-        raise RuntimeError("DeepNorthCompat source changed after its full-suite validation.")
+    compat = compat_record(Path(os.environ.get("SERVERBOUND_COMPAT_REPO", ROOT.parent / "DeepNorthCompat")),
+                           os.environ.get("SERVERBOUND_COMPAT_REF", "HEAD"), inputs["DeepNorthCompat.dll"])
     evidence = json.loads((ROOT / "local-audit/test-results.json").read_text())
     dll_hash = sha((ROOT / "bin/Release/Serverbound.dll").read_bytes())
     startup = []
@@ -95,7 +106,7 @@ def record(mods, client, server):
             "sourceFiles": files, "sourceSha256": sha(json.dumps(files, sort_keys=True).encode()),
             "dllSha256": dll_hash,
             "inputs": inputs, "offlineTests": evidence, "cleanRebuildIdentical": True,
-            "coordinatedDeepNorthCompat": compat_record,
+            "coordinatedDeepNorthCompat": compat,
             "nativeStartup": startup, "multiplayerAccepted": False, "performanceMeasured": False,
             "releaseScope": "Serverbound " + manifest["version_number"] + " release with incomplete multiplayer and performance acceptance",
             "followUp": ["Multiplayer acceptance matrix", "Extended multiplayer and optional-mod performance acceptance"]}

@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import unittest
 import zipfile
-from candidate import ROOT, sha, sources
+from candidate import ROOT, compat_record, sha, sources
 
 validation = runpy.run_path(str(ROOT / "scripts/verify-release.py"))
 verify_archive = validation["verify_archive"]
@@ -113,6 +113,51 @@ class ReleaseTests(unittest.TestCase):
         self.pack()
         with self.assertRaisesRegex(RuntimeError, "Packaged source differs"):
             self.verify()
+
+
+class CompatRecordTests(unittest.TestCase):
+    DLL = sha(b"partner plugin")
+
+    def setUp(self):
+        audit = ROOT / "local-audit"
+        audit.mkdir(exist_ok=True)
+        self.temp = tempfile.TemporaryDirectory(prefix="compat-test-", dir=audit)
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.git("init", "--quiet")
+        self.git("config", "user.name", "Release fixture")
+        self.git("config", "user.email", "fixture@example.invalid")
+        self.git("config", "core.autocrlf", "true")
+        self.write(".gitattributes", b"* text=auto eol=lf\n")
+        self.write("src/Patch.cs", b"class Patch {}\n")
+        self.write("package/validated-build.json", json.dumps({"sha256": self.DLL, "sourceFiles": sources(self.root)}).encode())
+        self.git("add", ".")
+        self.git("commit", "--quiet", "-m", "Release")
+        self.git("tag", "v1.0.0")
+
+    def git(self, *args):
+        return subprocess.check_output(["git", *args], cwd=self.root, text=True).strip()
+
+    def write(self, name, data):
+        path = self.root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+
+    def test_uncommitted_work_does_not_affect_the_committed_record(self):
+        self.write("src/Patch.cs", b"class Unfinished {}\n")
+        self.write("src/New.cs", b"class New {}\n")
+        self.assertEqual(compat_record(self.root, "HEAD", self.DLL)["sha256"], self.DLL)
+
+    def test_later_commit_rejected_until_the_release_tag_is_selected(self):
+        self.write("src/Patch.cs", b"class Later {}\n")
+        self.git("commit", "--quiet", "-am", "Later work")
+        with self.assertRaisesRegex(RuntimeError, "SERVERBOUND_COMPAT_REF"):
+            compat_record(self.root, "HEAD", self.DLL)
+        self.assertEqual(compat_record(self.root, "v1.0.0", self.DLL)["sha256"], self.DLL)
+
+    def test_substituted_partner_dll_rejected(self):
+        with self.assertRaisesRegex(RuntimeError, "differs from its validated package record"):
+            compat_record(self.root, "v1.0.0", "0" * 64)
 
 
 class ReleaseNotesTests(unittest.TestCase):
