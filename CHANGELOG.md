@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.15
+
+- Supports ImpactfulSkills 0.25.0 while retaining previously supported builds. Mining, woodcutting, loot, plant, beehive, and boat bonuses still use the player's own skill. 0.25.0 handles taming speed and taming XP itself, so Serverbound no longer touches that code.
+
 ## 0.1.14
 
 - Turns off OdinShip customization and ballista-mode routing if another mod later changes the same OdinShip input code, and logs `OdinShip: NO LONGER APPLIED`. OdinShip's own owner-only controls take over, and a ship owner rejects routed change requests instead of applying them.
