@@ -2,7 +2,8 @@ namespace Serverbound.Compatibility
 {
     internal static class ExpectedBuilds
     {
-        // 0.21.0/0.21.1 use direct reads; 0.21.3 through 0.24.0 share the guarded cap helpers.
+        // 0.21.0/0.21.1 use direct reads; 0.21.3 through 0.25.0 share the guarded cap helpers.
+        // 0.25.0 moves taming speed and XP to the vendor's own ZDO level and RPC.
         internal static readonly string[] ImpactfulSkills =
         {
             "ADE4FD2943A886B9B90C0241CB77EC65A97C1840EF39A906B58BAF3925086706",
@@ -11,7 +12,8 @@ namespace Serverbound.Compatibility
             "E74CDE9D2F5EC13DE46A301F4FCE2FB0F66932C234A5E8E6F685FB18D454E6D9",
             "79345A447506C6AE8D13A36DA8FD1FCDCBD965C5DA110B3953B8EA9517F7889D",
             "5B9CD6A20531E33BCE52E4EFD37631A82B0F0AA40D66860D8E1CDDC597736F66",
-            "C87ACCAF7E710BD2A13E4F766E4EBFACE9495EFDBC7CADB7C847C3707581ADB4"
+            "C87ACCAF7E710BD2A13E4F766E4EBFACE9495EFDBC7CADB7C847C3707581ADB4",
+            "928DF592E04F489826DD823619FEDED6A04195CA38103855ED0C3F01C9EFC050"
         };
         internal static readonly string[] ValheimCommunityPatch =
         {

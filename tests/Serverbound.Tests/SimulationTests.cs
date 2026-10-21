@@ -276,7 +276,9 @@ internal static class SimulationTests
             {
                 var original = PatchProcessor.GetOriginalInstructions(AccessTools.Method(impact.GetType(type, true), method)).ToArray();
                 var result = ((IEnumerable<CodeInstruction>)Call(skills, "RewriteContext", (object)original)!).ToArray();
-                Check(result.Length == original.Length && result.Any(c => c.operand is MethodInfo m && m.Name == "Actor"), "context replacement");
+                // ImpactfulSkills 0.25.0 handles taming through its own published level and RPC, with no local-player read to replace.
+                bool vendorOwned = method == "Prefix" && type.EndsWith("IncreaseTamingSpeed") && impact.GetName().Version >= new System.Version(0, 25, 0, 0);
+                Check(result.Length == original.Length && (vendorOwned || result.Any(c => c.operand is MethodInfo m && m.Name == "Actor")), "context replacement");
                 Check(original.Where(c => c.opcode == OpCodes.Ldc_R4).Select(c => c.operand)
                     .SequenceEqual(result.Where(c => c.opcode == OpCodes.Ldc_R4).Select(c => c.operand)), "formula constants changed");
                 Check(!result.Any(c => c.opcode == OpCodes.Ldsfld && c.operand is FieldInfo f && f.Name == "m_localPlayer"), "local player retained");

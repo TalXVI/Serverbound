@@ -33,6 +33,7 @@ internal static class ServerSkillTests
     private static Player? attacker;
     private static float health;
     private static int sequence;
+    private static bool VendorOwnsTaming => impact.GetName().Version >= new System.Version(0, 25, 0, 0);
     private static Skills.SkillType Animal => (Skills.SkillType)AccessTools.Field(impact.GetType("ImpactfulSkills.patches.AnimalWhisper", true), "AnimalHandling").GetValue(null);
 
     internal static void Run(Assembly assembly, Type skillPatch, Action<string, Action> test, Action initialize)
@@ -119,6 +120,15 @@ internal static class ServerSkillTests
         {
             var tame = Fake<Tameable>(); Position(tame, Vector3.zero);
             MethodInfo method = Vendor("AnimalWhisper+IncreaseTamingSpeed", "Prefix");
+            if (VendorOwnsTaming)
+            {
+                // 0.25.0 reads the level the vendor publishes and sends its own XP RPC, so the bridge must leave the body alone.
+                var original = PatchProcessor.GetOriginalInstructions(method).ToArray();
+                var result = ((IEnumerable<CodeInstruction>)AccessTools.Method(skills, "RewriteContext").Invoke(null, new object[] { original })!).ToArray();
+                Check(result.Length == original.Length && result.Zip(original, (a, b) => a.opcode == b.opcode && Equals(a.operand, b.operand)).All(same => same),
+                    "bridge rewrote the vendor-owned taming body");
+                return;
+            }
             foreach (float factor in new[] { 0f, 0.5f, 1f })
             {
                 Player player = NewPlayer(107 + grants.Count, factor); Position(player, Vector3.zero);
