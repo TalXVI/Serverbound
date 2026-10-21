@@ -13,7 +13,7 @@
     ".github/workflows/build.yml": "6fe83a4e5ecfdb9fc04047be668a592346bea10dab10ef37fa4ebc3bfd217b07",
     ".github/workflows/publish.yml": "4d26b5974f5bcfbdd4272a7ca1d567ad78d82834a992b8ea31120ee79fe5b3d3",
     ".gitignore": "4662fc12995ca234ca24e568bc8907d564a51be549df2422ce90f9aef912a104",
-    "CHANGELOG.md": "9298065934a46384f54d928266564c842016af5b7af5784b989200239bcb8ee8",
+    "CHANGELOG.md": "425d959212bf8cc0ea3e5d181c08131727f91a2dd562b42717d426bcd59ca9be",
     "Directory.Build.props": "51287600733d6bcb7578f6bb8acc5e6766fb2b8857c392100c29b285ba112967",
     "NuGet.Config": "ef18aae73f086bb5fc3e982ce9b14cd85951b0c85871c7f3459dfa7041d5158b",
     "README.md": "fe003270acf31c9ff64f0aa9317bfeca5bf089812ca909eaca75a5ae5171a5dc",
@@ -88,7 +88,7 @@
     "tests/Serverbound.Tests/VcpSpawnTests.cs": "490e06c2c9356a5789cb9be0752ce8c229960860d8820409ded7b7ff69501e43",
     "tests/Serverbound.Tests/packages.lock.json": "0418756634a2618a964b98cbd036d46b22f0c40bf287f12b80d623ebabb6c958"
   },
-  "sourceSha256": "a049149e4a1438e4c505cbde968d4ab72571c228d0f34efc5b2b17c1b74d4c99",
+  "sourceSha256": "9743fe8d7da13bf234fa523f47bbb015b9dcaedfb15fe8a179c5df3961da47a8",
   "dllSha256": "5a22bd48d7d1bd66e09232945db55c78305ba01933df74745e419c8a0b6500c0",
   "inputs": {
     "client/Managed/Assembly-CSharp.dll": "d6b4c84b681d78b49166c1ec6f1aa909245c153a6c419583a7705e60c8f0bb7e",
