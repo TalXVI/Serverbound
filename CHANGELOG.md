@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.16
+
+- Fixes a server crash while exploring caves. When a dungeon room failed to load, the server released that dungeon's room assets twice, which unloaded them while other dungeons were still using them.
+- No longer reuses an asset bundle the game's loader doesn't own when Unity refuses to load a second copy. The affected dungeon now skips spawning and is tried again later, instead of risking a crash when either copy unloads.
+
 ## 0.1.15
 
 - Supports ImpactfulSkills 0.25.0 while retaining previously supported builds. Mining, woodcutting, loot, plant, beehive, and boat bonuses still use the player's own skill. 0.25.0 handles taming speed and taming XP itself, so Serverbound no longer touches that code.
