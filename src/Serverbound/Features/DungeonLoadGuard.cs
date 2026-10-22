@@ -5,35 +5,35 @@ using Serverbound.Settings;
 using SoftReferenceableAssets;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 
 namespace Serverbound.Features
 {
 	/*
 		A dungeon whose room bundle Unity refuses to load never spawns, and its zone stays flagged as
-		loading for good. In the game's asset loader (SoftReferenceableAssets, Valheim 1.0.15):
+		loading for good. In the game's asset loader (SoftReferenceableAssets, Valheim 1.0.15),
+		Unity refuses a bundle with "another AssetBundle with the same files is already loaded" and
+		returns null. BundleLoader.OnLoadAsyncCompleted stores the null and reports success.
+		AssetLoader.LoadAssetFromBundleAsync then dereferences it and throws, so
+		DungeonGenerator.OnRoomLoaded never hears back.
 
-		- Unity refuses a bundle with "another AssetBundle with the same files is already loaded"
-		  and hands back no bundle; BundleLoader.OnLoadAsyncCompleted stores that null and still
-		  reports the load as succeeded;
-		- AssetLoader.OnBundleLoadCompleted then calls LoadAssetFromBundleAsync, which dereferences
-		  the null bundle and throws;
-		- so the asset's callbacks never run, DungeonGenerator.OnRoomLoaded never hears back, the
-		  dungeon never spawns and ZoneSystem keeps its zone in m_loadingObjectsInZones.
+		A vanilla dedicated server never instantiates dungeons near players, so it never gets here.
+		This mod does it for every player. Seen on a 1.0.15 Linux server as an endless loop over the
+		same two dungeons (ddormer/valheim-serverside#120).
 
-		A vanilla dedicated server never instantiates dungeons near players, so it never gets there.
-		This mod does, for every player, all day. Seen on a 1.0.15 Linux server as an endless loop
-		over the same two dungeons (ddormer/valheim-serverside#120).
-
-		Three guards, each of which does nothing unless that failure happens:
-		1. OnLoadAsyncCompleted without a bundle: take the bundle Unity says is already loaded, the
-		   same one under the same name, or report the load as failed if there is none.
-		2. LoadAssetFromBundleAsync without a bundle: report the asset as failed instead of throwing.
-		3. OnRoomLoaded with a failed room: let the dungeon go -- no spawn, its rooms and its zone
-		   released -- so the zone keeps working and the dungeon is tried again the next time it is
-		   created. Skipped when an earlier prefix already handled it (ValheimCommunityPatch has its
-		   own fix for this callback, which then spawns the dungeon without the missing room).
+		Three guards, each idle unless that failure happens:
+		1. OnLoadAsyncCompleted without a bundle reports the load as failed. It does not adopt a
+		   bundle Unity already holds under the same name. Only this loader handles that name, so
+		   the held copy belongs to code outside it, and an Unload(true) from either side would
+		   leave the other reading a closed archive.
+		2. LoadAssetFromBundleAsync without a bundle reports the asset as failed instead of throwing.
+		3. OnRoomLoaded with a Failed room lets the dungeon go. It does not spawn, and it releases
+		   its rooms and its zone, so the zone keeps working and the dungeon is tried again the
+		   next time it is created. Aborted is not a failure. ReleaseHeldReferences sends Aborted
+		   to every pending room, and treating it as a failure ran the release loop again, releasing
+		   rooms other dungeons still held. The guard skips a call an earlier prefix already handled,
+		   because ValheimCommunityPatch has its own fix for this callback and spawns the dungeon
+		   without the missing room.
 	*/
 	public class DungeonLoadGuard : IFeature
 	{
@@ -52,20 +52,6 @@ namespace Serverbound.Features
 			}
 		}
 
-		// The bundle Unity already holds for this loader: loaded under the loader's name, or its file's.
-		private static AssetBundle FindLoaded(string bundleName, string bundlePath)
-		{
-			string fileName = string.IsNullOrEmpty(bundlePath) ? null : Path.GetFileName(bundlePath);
-			foreach (AssetBundle bundle in AssetBundle.GetAllLoadedAssetBundles())
-			{
-				if (bundle != null && (bundle.name == bundleName || (fileName != null && bundle.name == fileName)))
-				{
-					return bundle;
-				}
-			}
-			return null;
-		}
-
 		[HarmonyPatch(typeof(BundleLoader), "OnLoadAsyncCompleted", new Type[0])]
 		public static class BundleLoader_OnLoadAsyncCompleted_Patch
 		{
@@ -76,15 +62,12 @@ namespace Serverbound.Features
 				{
 					return true;
 				}
-				AssetBundle held = FindLoaded(__instance.m_bundleName, __instance.m_bundlePath);
-				__instance.m_bundle = held;
+				__instance.m_bundle = null;
 				__instance.m_asyncLoadRequest = null;
-				LogOnce("bundle " + __instance.m_bundleName, held != null
-					? $"Unity refused to load bundle {__instance.m_bundleName} again because it is already loaded; using the one it holds, so what needs it still loads."
-					: $"Unity returned no bundle for {__instance.m_bundleName}; reporting its assets as failed rather than letting the game throw on it.");
+				LogOnce("bundle " + __instance.m_bundleName, $"Unity returned no bundle for {__instance.m_bundleName}; reporting its assets as failed.");
 				if (__instance.m_shouldBeLoaded)
 				{
-					__instance.InvokeCallbacks(held != null ? LoadResult.Succeeded : LoadResult.Failed);
+					__instance.InvokeCallbacks(LoadResult.Failed);
 				}
 				else if (BundleLoader.s_tickOnAsyncOperationComplete)
 				{
@@ -116,7 +99,8 @@ namespace Serverbound.Features
 		{
 			static bool Prefix(DungeonGenerator __instance, LoadResult result, bool __runOriginal)
 			{
-				if (!__runOriginal || result == LoadResult.Succeeded || __instance == null || !__instance)
+				// Aborted is emitted during ReleaseHeldReferences; treating it as failure reenters cleanup.
+				if (!__runOriginal || result != LoadResult.Failed || __instance == null || !__instance)
 				{
 					return true;
 				}

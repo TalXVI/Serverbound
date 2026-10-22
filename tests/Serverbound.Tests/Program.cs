@@ -39,7 +39,7 @@ internal static class Program
     }
 
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-    private static void RunServer() { StaticPhysicsTests.Run(Test); SimulationTests.Run(Lab, Test); VcpSpawnTests.Run(Lab, Test); StationRangeTests.Run(Test); FireTests.Run(Test); }
+    private static void RunServer() { DungeonLoadTests.Run(Test); StaticPhysicsTests.Run(Test); SimulationTests.Run(Lab, Test); VcpSpawnTests.Run(Lab, Test); StationRangeTests.Run(Test); FireTests.Run(Test); }
 
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
     private static void InitializePaths()
