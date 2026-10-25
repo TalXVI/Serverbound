@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.17
+
+- Supports ValheimCommunityPatch 0.38.0. Dedicated simulation retains the existing object-management takeover and Love Potion spawning correction. Previously supported builds remain supported.
+
 ## 0.1.16
 
 - Fixes a server crash while exploring caves. When a dungeon room failed to load, the server released that dungeon's room assets twice, which unloaded them while other dungeons were still using them.
