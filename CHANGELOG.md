@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.18
+
+- Supports ImpactfulSkills 0.26.0 while retaining previously supported builds. Owner-side skill bonuses keep their existing behavior.
+
 ## 0.1.17
 
 - Supports ValheimCommunityPatch 0.38.0. Dedicated simulation retains the existing object-management takeover and Love Potion spawning correction. Previously supported builds remain supported.
