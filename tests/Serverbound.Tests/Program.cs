@@ -26,6 +26,14 @@ internal static class Program
         try
         {
             InitializePaths();
+            string? regression = Environment.GetEnvironmentVariable("SERVERBOUND_REGRESSION");
+            if (!string.IsNullOrEmpty(regression))
+            {
+                CoreRegressionTests.Run(Test);
+                Check(passed > 0, $"No regression tests matched '{regression}'.");
+                SysConsole.WriteLine($"PASS: {passed} test cases");
+                return 0;
+            }
             ConfigurationTests.Run(Lab, Test);
             InstallationTests.Run(Test);
             ComfortPortalTests.Run(Lab, Environment.GetEnvironmentVariable("SERVERBOUND_TEST_MODE") == "server", Test);
@@ -33,6 +41,7 @@ internal static class Program
             else { SimulationTests.Policy(Test); ClientSimulationTests.Run(Lab, Test); }
             OdinShipTests.Run(Lab, Test);
             TerrainLimitsTests.Run(Lab, Environment.GetEnvironmentVariable("SERVERBOUND_TEST_MODE") == "server", Test);
+            if (Environment.GetEnvironmentVariable("SERVERBOUND_TEST_MODE") == "server") CoreRegressionTests.Run(Test);
             SysConsole.WriteLine($"PASS: {passed} test cases"); return 0;
         }
         catch (Exception exception) { SysConsole.Error.WriteLine(exception); return 1; }

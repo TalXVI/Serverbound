@@ -33,7 +33,7 @@ namespace Serverbound
 	{
 		public const string PluginGUID = "org.serverbound.valheim";
 		public const string PluginName = "Serverbound";
-		public const string PluginVersion = "0.1.18";
+		public const string PluginVersion = "0.1.19";
 
 		private static Plugin context;
 		public static Plugin instance => context;
@@ -131,6 +131,7 @@ namespace Serverbound
 			try
 			{
 				CompatibilityInstaller.CheckInstallation(Resolve, VersionOf, IsDedicated());
+				if (installed) CoreVerification.Require();
 				CompatibilityInstaller.Verify();
 			}
 			catch (Exception error)
@@ -168,6 +169,9 @@ namespace Serverbound
 
 		private void Update()
 		{
+			// A foreign patch can rerun our transpilers after Start. Unpatch outside that rebuild.
+			if (installed && CoreVerification.Failed) DisableSimulation();
+
 			OdinShipOwnershipPatch.Update();
 			if (consoleStarted)
 			{
@@ -238,7 +242,11 @@ namespace Serverbound
 				Harmony featureHarmony = new Harmony($"{PluginGUID}.{featureName}");
 				try
 				{
+					if (feature is Features.Core) CoreVerification.Begin();
+
 					patcher.PatchAll(feature.GetType().GetNestedTypes(), featureHarmony);
+					if (feature is Features.Core) CoreVerification.Require(allowPending: true);
+
 					applied.Add(featureHarmony);
 				}
 				catch (Exception e)

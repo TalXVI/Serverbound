@@ -1,6 +1,6 @@
 {
   "pluginGUID": "org.serverbound.valheim",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "upstreamCommit": "92591fd02b6aee19b31689479ae886be28771dfa",
   "sdk": "8.0.422",
   "packagingRuntime": {
@@ -13,15 +13,15 @@
     ".github/workflows/build.yml": "6fe83a4e5ecfdb9fc04047be668a592346bea10dab10ef37fa4ebc3bfd217b07",
     ".github/workflows/publish.yml": "4d26b5974f5bcfbdd4272a7ca1d567ad78d82834a992b8ea31120ee79fe5b3d3",
     ".gitignore": "4662fc12995ca234ca24e568bc8907d564a51be549df2422ce90f9aef912a104",
-    "CHANGELOG.md": "e734d430da8bd686f45b68247e32a7192c37009e78f215ef16f79b10edbd4364",
+    "CHANGELOG.md": "e174005e460f7c500d09b041eea97f23759f5bf66bd18737774db4b39d82b3d5",
     "Directory.Build.props": "51287600733d6bcb7578f6bb8acc5e6766fb2b8857c392100c29b285ba112967",
     "NuGet.Config": "ef18aae73f086bb5fc3e982ce9b14cd85951b0c85871c7f3459dfa7041d5158b",
-    "README.md": "cd1de051503c913a6d4412b537cd491a9bab484a88f73237f00d94497d290f91",
+    "README.md": "276aa585c67a773cd655aeb1c30b14aca774ac19748452c558ce2774439a40f8",
     "Serverbound.sln": "4066adcce4eac1f145ae319c54f7ebfaa713a86685be57eca589dd0a170bd3f6",
     "bin/build-bbcode.mjs": "cbd80b583feb434e2b1ad835d6800a86553cc3b095be9929089873fad5747d81",
     "global.json": "3df4ce55234dc6fd7b966086616b126278aa90858a78d9c2a7f5445f14712d29",
     "icon.png": "88fb77c141e6bbf29eb85e45be3c9ef334b964d67512bda0f357b7b1b3e4d2aa",
-    "package/manifest.json": "cb96fb077cbf6c7a5cce8ff7d7f3c60a4d3edd45166401e60fda9e8979a97391",
+    "package/manifest.json": "f097c982e767783702405875e6ad035d52de26f24af152ea90ed2fce16a88f5a",
     "scripts/build-and-test.py": "14fa4d717ac975aba7bf2532dcdc4e3ffb1823f7de55ebbd40f5b988aa0da4c4",
     "scripts/candidate.py": "dd3c8c8dbbf2bd6855106999f16230ea9e4237d5e0ee62dee9d3daefa2b50fdb",
     "scripts/package.py": "1d23a075015cf1c5046dd858a9d915c076c8f02bb39ac25497021c2c0ba2dd2c",
@@ -37,21 +37,22 @@
     "src/Serverbound/Client/placeholder": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "src/Serverbound/Compatibility/ComfortPortalPatch.cs": "5f17f90076e881755d15e1ca343914ae975939fa1d080252847089fd5dc706b1",
     "src/Serverbound/Compatibility/CompatibilityInstaller.cs": "f5f0c68f3db5d9b6e8766af2773f29174159d3551850c64cceaad6885f4b416a",
-    "src/Serverbound/Compatibility/ExpectedBuilds.cs": "a98f5a0d041f5d4bd8a54dbfb913d32a8f86be8d5d43fe05a7dd75025613947f",
+    "src/Serverbound/Compatibility/ExpectedBuilds.cs": "6244fe240776f3e767c27bf610e14d03d441a5b654465de03f0b7810125a6708",
     "src/Serverbound/Compatibility/Guard.cs": "7edb300d0716caf16800032b87a2c71599122dcf788d5fda3af51944a050977b",
     "src/Serverbound/Compatibility/OdinShipOwnershipPatch.cs": "734775da5bc777bebdff2d5d6dc1e3ad348ca6ce3bddf41d3d68a6c916373e1a",
     "src/Serverbound/Compatibility/OwnerSkillPatch.cs": "2375d0fb2bf6965d6f4ade221ab69cebd67e232556466b84792c661493fdf957",
-    "src/Serverbound/Compatibility/SimulationPatch.cs": "8cf18c3a990247bf18a4616a43ff487e1286dfa33a62ccbb5658c90ddb8d64c0",
+    "src/Serverbound/Compatibility/SimulationPatch.cs": "cfbb9c91e8e23f333dcbda5a540b7ec41d6850b4fa3036a8d9d8297d249e7f0f",
     "src/Serverbound/Compatibility/SkillState.cs": "a7baceec0136f403f540b4cb396eb7bf6c98108043559908d3396e453bfaa441",
     "src/Serverbound/Compatibility/TerrainLimitsPatch.cs": "110377551f2070f943fe5bdc004ee3af0ed866fa0b2be647cac72ce4e9382561",
     "src/Serverbound/Compatibility/VcpObjectPassPatch.cs": "adb0eecdc6ce019c628ceec1e37fd7d1a744d07dc7db66c2cebdfc03c313dd93",
     "src/Serverbound/Compatibility/VcpSpawningPatch.cs": "61b759f23e3e432ffe605faa1f45bee75750b15ffdefae541fb947177fc3232e",
     "src/Serverbound/Configuration.cs": "cc409f422a9706b35c0e2eb4831ad61fa910146978436aa05f1a116632b544d5",
     "src/Serverbound/ConsoleInput.cs": "d97f0a7c7cfe04937de9b70a6150141aeb46c8ddaf7144b7d0f1769eae564a7f",
-    "src/Serverbound/Features/Core.cs": "d825537dcb0b8c22f6936d20462492b6946c28d02b59341ec5d59c06f9fb2c02",
+    "src/Serverbound/CoreVerification.cs": "d906ef47347e46365d0aa8f436f1ec29ffb1ae6338cb9292cc74fb2e86a36725",
+    "src/Serverbound/Features/Core.cs": "96de339792e5a7e62ff749cce294149230d9fe6c7adfc49a8b4c4d81f605f11c",
     "src/Serverbound/Features/Debugging.cs": "3363532abbdf43b53af80bf93bb1ef9fef46687f495469312ebbe4564f282048",
     "src/Serverbound/Features/DungeonLoadGuard.cs": "89984ad978cc958044b9535a9cc32532a1b74fc105a18674ba50fbf060ad4511",
-    "src/Serverbound/Features/Fixes.cs": "e80e201e762972ad8fbafd4aac0aafb16d3f85880b2ef94662f49c5e901d18e7",
+    "src/Serverbound/Features/Fixes.cs": "5db5f093a987b75c0eb1ea655d06095afadc9bcfaaedf049be7861967cb4f2cb",
     "src/Serverbound/Features/HandedOverFires.cs": "2a455d621f2604f6c230cd100b518c3565eb848063feb498040844e8e4afb93b",
     "src/Serverbound/Features/MaxObjectsPerFrame.cs": "f56a4067a327b724d063ce0a006529b0e7e0d78283853b97b44e69d7eea362c8",
     "src/Serverbound/Features/Networking.cs": "725109a8bb821939a30658b69d4a7104f354e772c0ae80bc333a939e314e86da",
@@ -61,36 +62,37 @@
     "src/Serverbound/FeaturesLib.cs": "6cd0637e76a6c9d6ceca01ddf5ccc80e49409f7db9d34d4f31264b924c47ccc0",
     "src/Serverbound/ILMatch.cs": "431c1e3b2420ead4f10e9f62c23b4ad6fdd714ab95274670e37105be3addcbd1",
     "src/Serverbound/Patching.cs": "9e0578cfa534eafd71a61be764f411786d4ed592064695ecf3983eb19adf7f3b",
-    "src/Serverbound/Plugin.cs": "12061a4cb09bf8986ffd3081e36780182ab1fc11894c06fbee90f4b83a28c4e0",
+    "src/Serverbound/Plugin.cs": "067bb0c35aef46e8ef831dddcfbcfa95401c2c9fb9794945f9087b1069267783",
     "src/Serverbound/Properties/AssemblyInfo.cs": "c05cd0a9b447f59a62e71d8c2a7a04126dbc638f6d4df648a9546343b16406b6",
     "src/Serverbound/Requirements.cs": "4b8e4351eedec90b5728a4d42722a85bbdf4310646e9a3d33232789d66502442",
     "src/Serverbound/Server/placeholder": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "src/Serverbound/ServerConsole.cs": "a8428cbb3919d73a336d964e1d48dd56e531c3f177c58d8051c42a65126843ea",
-    "src/Serverbound/ServerSafe.cs": "6dfe1df2d0a2120be88b9fbc39ab70d55120fede45d4e0fc4c8ad2dbc58cff0a",
-    "src/Serverbound/Serverbound.csproj": "0443c6c449b87a428c881a7503992415decb102129c2aa7995533c59743a6427",
+    "src/Serverbound/ServerSafe.cs": "af7d1e7c63c5890b12754c1dd98cdadf70be75c781f552e16a77dcf7740a1de5",
+    "src/Serverbound/Serverbound.csproj": "8520e6db2ac083f7156920699d413d3d1d47e2bd5d50e51409bd44209e01dc2f",
     "src/Serverbound/Utils.cs": "76c9df118f92c141ee7be2863a0e5801c08f2e9494e29911a593f3d32c796161",
     "src/Serverbound/VanillaDrift.cs": "d125a929f42c63c9326ada9544cf59fa6d0e57e52b2e91aab29b200e9f8c39e2",
     "src/Serverbound/packages.lock.json": "71bfaa5664af4e2c718a4d22f0cad9af568397a6b667c4fa78a5d8f930064d92",
     "tests/Serverbound.Tests/ClientSimulationTests.cs": "4f68b1d49414347e0bec4b131bcf8fc1fa51a4d46d307a4944fc2052cd3c6ce0",
     "tests/Serverbound.Tests/ComfortPortalTests.cs": "0f9a64f8bf534c5065134191515996869395128082f997ff087219f0dc1fd2ee",
     "tests/Serverbound.Tests/ConfigurationTests.cs": "7f276ac036bbf3ebc861c1743bf908b9ba6988062b41f4106d0af730da489186",
+    "tests/Serverbound.Tests/CoreRegressionTests.cs": "9e8907bfd182571f89daecb9b686fafa5cf946a7c07798a09c0ecf43de13953e",
     "tests/Serverbound.Tests/DungeonLoadTests.cs": "cedb8b85f03325762a7dddf6efe30c9bbd8156e4384b81e7426050c0c850a9cb",
     "tests/Serverbound.Tests/FireTests.cs": "6f57c4d46c7dad7936c6b578f4fec211dabbeeb1530c57210793c735f67afd0f",
     "tests/Serverbound.Tests/InstallationTests.cs": "c9d8161aacdc31854a69aced2a9927a3d1289e240571423ad86ad6a33b4b41aa",
     "tests/Serverbound.Tests/OdinShipRuntimeTests.cs": "b5db0ac3cc72299823969e74e6375d211966c833b308efbbb671349cdf7535df",
     "tests/Serverbound.Tests/OdinShipTests.cs": "820a42e11b61355d537bcfc1afb328818603a9d23ba7c9c710e1390761ad162c",
-    "tests/Serverbound.Tests/Program.cs": "e4cafc3830a64c358ecdd87f5637261f62b4b879eb7b9589303f254b0631b1a6",
+    "tests/Serverbound.Tests/Program.cs": "8bf0fdd5a1b9e6cd1fe4052101f3420d1cd9ef17fca599e8707e6854cea8910c",
     "tests/Serverbound.Tests/ServerSkillTests.cs": "6149640c4c335552fe3d3bb7cc8b8fabfbec0264b427e651318a7607eadcdece",
     "tests/Serverbound.Tests/Serverbound.Tests.csproj": "427ee0130001861f3185147aa075f11609fb784bcb438b7872ba0162db0e4c2a",
-    "tests/Serverbound.Tests/SimulationTests.cs": "e5cdace3a4c5c3d16f01592cde76d0448dd7ddcd532ce61d471a0b5d7dc2c30e",
+    "tests/Serverbound.Tests/SimulationTests.cs": "2d61cd755be3569699f060496067abf70743f41a9d02fe57c5ddb9744808c083",
     "tests/Serverbound.Tests/StaticPhysicsTests.cs": "019401f477570cd4ff0470cd47c47b1b588ee309b9848123ad2827953bdb376a",
     "tests/Serverbound.Tests/StationRangeTests.cs": "770a6b934d937be7797f2f13c6f15702b7b671f9194a0e9c30c1c8472b85d2b4",
     "tests/Serverbound.Tests/TerrainLimitsTests.cs": "94415e52f1361f956fdeeec8e18ae6218fa11d5da2ae7ad0d65302063a9bf2f3",
     "tests/Serverbound.Tests/VcpSpawnTests.cs": "490e06c2c9356a5789cb9be0752ce8c229960860d8820409ded7b7ff69501e43",
     "tests/Serverbound.Tests/packages.lock.json": "0418756634a2618a964b98cbd036d46b22f0c40bf287f12b80d623ebabb6c958"
   },
-  "sourceSha256": "a54f0c45d48bb61d204d10178d92be3d3ca18fca7dd115d66e7d56f77a1ac1da",
-  "dllSha256": "6f17301a442467f62b2d51c4201ea69b006ff626e2f989d1e5c1262325c8ae6b",
+  "sourceSha256": "ef201f66e99424fa3e96f1e932589ea20106aa05321871904c374f03455be6ee",
+  "dllSha256": "952d4826936ec5cd1f1c77065ba9f759a99087905cf0d5e0328b52a600d1cf8e",
   "inputs": {
     "client/Managed/Assembly-CSharp.dll": "d6b4c84b681d78b49166c1ec6f1aa909245c153a6c419583a7705e60c8f0bb7e",
     "client/Managed/assembly_googleanalytics.dll": "516d1daba56ae51e6486846c8d2fce3db9cd393fb201a8c9151ef64cfe8314e5",
@@ -381,23 +383,23 @@
     "MonoMod.Utils.dll": "9d1495f147ac93c4f81f84538c1a326e8f8a6aefc78d6289d798f3ce1162c5e9",
     "ImpactfulSkills.dll": "19b9e4268c68af645a2812574797ea9579dfbf5e1b3d8ad9fca3a23f07df8164",
     "ValheimPerformanceOptimizations.dll": "614cd643343e2e2d182ba4b50aa8c96d8fedb8e09a16c6aa0018bad222d6ee70",
-    "ValheimCommunityPatch.dll": "2218a8ab2f974fa66fb26bb2f49917ce7bacbe72234316cf40a65523fcfe2e81",
+    "ValheimCommunityPatch.dll": "c3726d510f6081d5beaeac4241e1ac107e2382069688055deccf9e5418f58b46",
     "Jotunn.dll": "9509221046842a70f94b98bab4cb41005dee026823a7a79345829ed46a30f796",
-    "ValheimTune.dll": "48d407b7cf76b0767aad259c89bfbd2058c8a09eb214ea7079d1363aee8b9c55",
-    "DeepNorthCompat.dll": "99054c83dbf3e35a3b1eba70d5854b3dba33e4d8692ba4478756b3654faee84e",
+    "ValheimTune.dll": "8e00c71476806ab8ed6e344aa639cb08d5d9eb4e90d3a7c77e4de2f0b67c5b9a",
+    "DeepNorthCompat.dll": "cf1ca169348b23e09ad8968013e5ca8b9d6345addfeded0876ff670b398fc19e",
     "OdinShip.dll": "5d5817bc169677db49cae55986b3f6a178ab3bf0b1d681a2aba4ecc5dac067d0"
   },
   "offlineTests": {
     "client": 48,
-    "server": 85
+    "server": 94
   },
   "cleanRebuildIdentical": true,
   "coordinatedDeepNorthCompat": {
     "pluginGUID": "DeepNorthCompat",
     "pluginName": "DeepNorthCompat",
-    "version": "1.5.6",
-    "sha256": "99054c83dbf3e35a3b1eba70d5854b3dba33e4d8692ba4478756b3654faee84e",
-    "offlineTestsPassed": 396,
+    "version": "1.5.7",
+    "sha256": "cf1ca169348b23e09ad8968013e5ca8b9d6345addfeded0876ff670b398fc19e",
+    "offlineTestsPassed": 398,
     "offlineValidation": {
       "roles": {
         "client": {
@@ -422,7 +424,7 @@
               }
             }
           },
-          "testCasesPassed": 284
+          "testCasesPassed": 286
         },
         "server": {
           "integrations": {
@@ -449,7 +451,7 @@
         }
       },
       "schemaVersion": 1,
-      "testCasesPassed": 396
+      "testCasesPassed": 398
     },
     "sourceFiles": {
       ".gitattributes": "7846b37551c23529eb00c68fbb5a435390e922d9db2625cb88681c31746b289e",
@@ -457,12 +459,12 @@
       ".gitignore": "9d38957cb217a0af36f309d9954a700e544c6165643e7bd033f0da9b7a3dcbb4",
       "Directory.Build.props": "71269911e5cc1a5914868565b28040e601fcda19149f3bcdb28213734f2d60bb",
       "LICENSE": "966986d1e900bc9df9931249a795c872f0abdbabcca90cbf687b1b134dc0abb4",
-      "README.md": "87f6bb2f08b088ad9f0665b728b9b19e4d01e006a6bff17ffc7432656fafd67c",
+      "README.md": "82e1af03b02c07a4b7e0d40ace00d30f46fa05384d16010b56732c98243f03a2",
       "global.json": "3df4ce55234dc6fd7b966086616b126278aa90858a78d9c2a7f5445f14712d29",
       "justfile": "5567e41c2d448eb02a5be34faf21831cf40441d65cb244df09b7ab2b29aa71b4",
-      "package/CHANGELOG.md": "93b0b854aa9449a36aa6b5742f3a840882ef4bc653f139972865d291060e15a6",
+      "package/CHANGELOG.md": "c822c0911326a594c7a784054d8532f0534c6147a4c5b17ab2800b51b436b7c5",
       "package/icon.png": "3f96bea2b17d577d0d6ed352fafbbd89a438a9795fbdb825aac588fd95b2b584",
-      "package/manifest.json": "51d9ec451f7a4651f96ab0b005cf47c2343e4c45242162be5a08724a96a879af",
+      "package/manifest.json": "8fb8e82a793d9fc0ca7af00c80fc266462220cf781d8e9482c6f453b7ad8d3a9",
       "scripts/build-and-test.py": "25eb4f13ec6e05bd190c4de32c31a4e5917cb1f2f8f1f47f7e26d7fefb2c720d",
       "scripts/package.py": "3efadf9a30fc05bcd3813828bddfad0a894dd6bf227171110f1714f83e09bca7",
       "scripts/prepare-local-server.py": "03dc4ed36ade534b3a27d89b833a129dc1824c19719de9ad035d196716bea580",
@@ -479,11 +481,11 @@
       "src/DeepNorthCompat/Calculations.cs": "be7832c58ce042f384c7cd7440fd68296f4d3ac75c581bdb46b8258ce5231588",
       "src/DeepNorthCompat/ChestDiagnostics.cs": "0dd8da57fcc57627c90b9afd88aa77b5c25307013e3f63e3754b09ed98d57681",
       "src/DeepNorthCompat/CompatibilityInstaller.cs": "c107fb88c24f2dcf5d3a9826703c7fddb9d254b6239523a830562598c41504b3",
-      "src/DeepNorthCompat/DeepNorthCompat.csproj": "61e03ef2613a137821369d89793185ea5ab83bea59a004d1721f432b4f5e1dbd",
+      "src/DeepNorthCompat/DeepNorthCompat.csproj": "018e91e4cc7f6987c0a0ce5ff5aab830c6215e4d878cc139401efb493a444354",
       "src/DeepNorthCompat/DiagnosticReport.cs": "e42bd28a9a8335b630886096fec5ba0389d1c1372600d7035d4e2a538ab588ff",
       "src/DeepNorthCompat/ILMatch.cs": "35cc7e3601c6a0013761f60c195d7fce6a7cb1eedaacec95e17639f11977b03c",
       "src/DeepNorthCompat/ItemLedger.cs": "7ede1fcb73a9e0fa47e74f370013ccae39017b4b4bff930b5c882279da560347",
-      "src/DeepNorthCompat/Plugin.cs": "3ad393ce032ac8800f8e0cee4e07c90a0a43697f39ac8fb8120797d878601a7c",
+      "src/DeepNorthCompat/Plugin.cs": "89a577385db2c4406e17c477e9ba27bca49170a0e98413e6ca658d91bef70cc0",
       "src/DeepNorthCompat/ReportUpload.cs": "6953adc2423afe9edbc8643bab3c325f4706dd31f91fc602d79dcf6250d6ff73",
       "src/DeepNorthCompat/WorldProbe.cs": "2214a7272c725c9759a89c3bdddb8ca88256b69e686a65a717051a668f41b19c",
       "src/DeepNorthCompat/patches/AaaRecipeRowsPatch.cs": "c016b31c4d9938aa02936b079735509d14fff755253f6505a810538217bdeaa8",
@@ -504,7 +506,7 @@
       "src/DeepNorthCompat/patches/ForgeCraftingPatch.cs": "c7dcc5cb8e9c31a300da8f8e212b2e8fa700eac80d0664d529d0142ec0aa4369",
       "src/DeepNorthCompat/patches/HearthTerrainPatch.cs": "b016894c69361c0cf8e99636f13d84421267f4ec8e26625c958af25c36b7075b",
       "src/DeepNorthCompat/patches/IdleSyncPatch.cs": "c0a8d6ac932fd62eb6f51310ca268c831630c709016aa08b3dc4db2c2595abaa",
-      "src/DeepNorthCompat/patches/MyLittleUiAmmoPatch.cs": "4e8d1c6c227ddc8f0813a9f3942f694ce1c277eefcac24fb00e060334d4c3a33",
+      "src/DeepNorthCompat/patches/MyLittleUiAmmoPatch.cs": "c79c918616c69fdf0743c69dd64b72969de0f53e630573f54de60c4021b3fcf2",
       "src/DeepNorthCompat/patches/NoSmokeStayLitPatch.cs": "c793b0da133287c8d8c8715a911c81cef544a79113f7f58178451730e19a3d0e",
       "src/DeepNorthCompat/patches/OdinShipConstructionPatch.cs": "8012363b400a30b99bb855164a83d63aa074db152eecbe3b9b5e6548ef6f1a56",
       "src/DeepNorthCompat/patches/OdinShipFishPatch.cs": "a9ce1d1677f1f0c9033ac69a661342f533c915f32cfff8c1894834ba52cdcca0",
@@ -516,7 +518,7 @@
       "src/DeepNorthCompat/patches/ReforgedPotentialPatch.cs": "95c4adebe45d35930d1abfbd4fcfc0e88ab2c9b41a600649b9189aa3d0c51cca",
       "src/DeepNorthCompat/patches/RuneIcePatch.cs": "e63c9e3b0041fdabfde19f0c34c8836fdc69e2151c9fa905428a4f9530013ca1",
       "src/DeepNorthCompat/patches/RuneSpritePatch.cs": "d0b141bc3b9f15c3bed0950666aecc0201421e376e731344dcc4c93edc640644",
-      "src/DeepNorthCompat/patches/TabAudioPatch.cs": "bc68ea26a18333d2bd40d452b8dab30508dd1909f92c8fda27065c41e586ab42",
+      "src/DeepNorthCompat/patches/TabAudioPatch.cs": "e46ab5cd559e974d4c9ccc648320c2fe6dbdf6d265582fa862249b394e9a4202",
       "src/DeepNorthCompat/patches/TeleportEverythingPatch.cs": "e3d0f920abf5b141567b97994755264f59c3af0500d2c943a0de6321dc48013e",
       "src/DeepNorthCompat/patches/TuneClientPatch.cs": "bb5999f66369a16ce450db2518fcef3c7e9685de452f8f5337684b2dc93ab64d",
       "src/DeepNorthCompat/patches/VpoBurstPatch.cs": "fca9afd44b50588e3737c466e5bce9826fbd1f821dbb8689b816cf0706c403fe",
@@ -534,17 +536,17 @@
       "tests/DeepNorthCompat.Tests/PipelineTests.cs": "3e356acddfcd855f0c4a528a7cbba1cd43f565a554be1ca2104c8b85f45c9fe4",
       "tests/DeepNorthCompat.Tests/PlantingTests.cs": "948a2821ac0e01b4aeb7bfeb5efe6e303ea5fb33196b999cf64c142092dd5c15",
       "tests/DeepNorthCompat.Tests/PreviewTests.cs": "ea8665a3327718cf5f852b09c78d91bebd7c6e71228a4b9e484812beccaacada",
-      "tests/DeepNorthCompat.Tests/Program.cs": "322a7e58484d3c8b00271218cacc95efe8c32ee4b8e60030367522e6a0a9ed68",
+      "tests/DeepNorthCompat.Tests/Program.cs": "ff870822c0583ab993f6f7727685753495fb75130535de695865d406968155e3",
       "tests/DeepNorthCompat.Tests/ReforgedPotentialTests.cs": "1f3bda6b056254c35f85fa31f8ea337e3fbab53b91304c04929073aff37e95bd",
       "tests/DeepNorthCompat.Tests/ReportUploadTests.cs": "6a4a00a9532670a0cebaf9dc7646b9de7d15a0a569658fd9995986b37245b652",
       "tests/DeepNorthCompat.Tests/RuneIceInstallationTests.cs": "72fc1cbe9d61a8fb0a50b844adb65b4afbf611ef97e8f2f5d4b1fae85933ea9b",
       "tests/DeepNorthCompat.Tests/RuneSpriteMaterialTests.cs": "5c7340fcea0d96897c9bb4fad64bfa2113782a9a7375f55deae337fa3e09d523",
-      "tests/DeepNorthCompat.Tests/TabAudioTests.cs": "a0336c007252374c6aaeefeb5ffda3c626dadb862df37570cbf910e269e67fa8",
+      "tests/DeepNorthCompat.Tests/TabAudioTests.cs": "16a860e366022f9f984666b60f5694188fccea80abca6d88da9ac825106cd0c8",
       "tests/DeepNorthCompat.Tests/TuneClientTests.cs": "571cce48d735ff69c0ba87a5784c6134a7697b9a165d5f93ce1bc4ee3d2b5626",
       "tests/DeepNorthCompat.Tests/VpoBurstTests.cs": "06ae26b49d4ca35bbea4e74825c503bc6c30553369773de32a038aea742f835f",
       "tests/DeepNorthCompat.Tests/WorldProbeTests.cs": "6c01be7d97300c28d977a06e7110ac470a4cfa7f670a658d18fad5b43c92f546"
     },
-    "sourceSha256": "90634f46e53135922782ad1816b1ae48c87a25a7962c2539d754b830ae816206"
+    "sourceSha256": "9fbdc5e12bd7db1595c4b02f74ec78dcb1b4cfdcd496bb8763a01690f0d8697c"
   },
   "nativeStartup": [
     {
@@ -553,7 +555,7 @@
       "exitCode": 0,
       "initialConfigSha256": "76d81194fbf1908848904263933930b2ae5b4afb9e992716b55b9b715c476562",
       "retiredSettingsRemoved": true,
-      "dllSha256": "6f17301a442467f62b2d51c4201ea69b006ff626e2f989d1e5c1262325c8ae6b",
+      "dllSha256": "952d4826936ec5cd1f1c77065ba9f759a99087905cf0d5e0328b52a600d1cf8e",
       "runtimeInputs": {
         "config/__valheimmods.ValPerfMonitor.Early.cfg": "348b1eb384f1bcf4cbbaccbb6368d8e12af485ee8648f9ae3c002b14c17ddc33",
         "config/_shudnal.ConditionalConfigSync.cfg": "00179f7f054304181ae7f47317f56c783c27aba039029afd392ce390e6a27460",
@@ -619,7 +621,7 @@
         "config/odinplus.TeleportEverything.cfg": "110a1addef876b4dc8aa71a19962248e61d0b37cb10b2995889ad3efd9c2cfcc",
         "config/org.bepinex.plugins.network.cfg": "f5bbddcccd7c5c1fadbe87c7265e99a0b7963fce83a006332c8246bbd602fe92",
         "config/org.bepinex.plugins.spearfishing.cfg": "4757ed4f4ff78d684c98e78f446f5001d808b2bb4001dea1491012d5c1abc117",
-        "config/org.serverbound.valheim.cfg": "47c9b677afe5a2cfa5bf42b94881c29ffe1c0da5e7021e22537a545c32cadcc1",
+        "config/org.serverbound.valheim.cfg": "5a2275e9246f747ecf86c2f925b5d8a0c4719248ad8613863583559cfff0f58b",
         "config/QualityGlowFix.cfg": "c51c53c8a5113c70f97c2bf160927f416427e37e447b9da50c5c1d0c9a133d05",
         "config/redseiko.valheim.pseudonym.cfg": "b3e2c363443cf947ba909ddac4f4caeae5cbc77a1ba78f2e616984dc0d9827f8",
         "config/ru.ivest.valheimvisuals.cfg": "fcaddfcc86f3c66328b02f286552a77eb67805638a3113d3b6c8f8aacfc005f2",
@@ -652,9 +654,9 @@
         "core/Mono.Cecil.Rocks.dll": "54ac539fb5ddc8b44c0e9acd0fcb7324f89d1a072edf8ebc1b06dd691e3d3927",
         "core/MonoMod.RuntimeDetour.dll": "40e49bb314391cd7bddc2644f8553eeba92c194b940836b103df16955c464e0c",
         "core/MonoMod.Utils.dll": "9d1495f147ac93c4f81f84538c1a326e8f8a6aefc78d6289d798f3ce1162c5e9",
-        "plugins/Serverbound/Serverbound.dll": "6f17301a442467f62b2d51c4201ea69b006ff626e2f989d1e5c1262325c8ae6b"
+        "plugins/Serverbound/Serverbound.dll": "952d4826936ec5cd1f1c77065ba9f759a99087905cf0d5e0328b52a600d1cf8e"
       },
-      "logSha256": "2e16b43a3b53b093ab43f83cfdcb5f8a04c4f26f3876f5f4293f90c262bff5f7"
+      "logSha256": "1515417cd1e2c4cd2c10ef2985d7a6baeacf338700eba552aa1ccea5e4000840"
     },
     {
       "role": "smoke-skills",
@@ -662,7 +664,7 @@
       "exitCode": 0,
       "initialConfigSha256": "76d81194fbf1908848904263933930b2ae5b4afb9e992716b55b9b715c476562",
       "retiredSettingsRemoved": true,
-      "dllSha256": "6f17301a442467f62b2d51c4201ea69b006ff626e2f989d1e5c1262325c8ae6b",
+      "dllSha256": "952d4826936ec5cd1f1c77065ba9f759a99087905cf0d5e0328b52a600d1cf8e",
       "runtimeInputs": {
         "config/__valheimmods.ValPerfMonitor.Early.cfg": "348b1eb384f1bcf4cbbaccbb6368d8e12af485ee8648f9ae3c002b14c17ddc33",
         "config/_shudnal.ConditionalConfigSync.cfg": "00179f7f054304181ae7f47317f56c783c27aba039029afd392ce390e6a27460",
@@ -728,7 +730,7 @@
         "config/odinplus.TeleportEverything.cfg": "110a1addef876b4dc8aa71a19962248e61d0b37cb10b2995889ad3efd9c2cfcc",
         "config/org.bepinex.plugins.network.cfg": "f5bbddcccd7c5c1fadbe87c7265e99a0b7963fce83a006332c8246bbd602fe92",
         "config/org.bepinex.plugins.spearfishing.cfg": "4757ed4f4ff78d684c98e78f446f5001d808b2bb4001dea1491012d5c1abc117",
-        "config/org.serverbound.valheim.cfg": "47c9b677afe5a2cfa5bf42b94881c29ffe1c0da5e7021e22537a545c32cadcc1",
+        "config/org.serverbound.valheim.cfg": "5a2275e9246f747ecf86c2f925b5d8a0c4719248ad8613863583559cfff0f58b",
         "config/QualityGlowFix.cfg": "c51c53c8a5113c70f97c2bf160927f416427e37e447b9da50c5c1d0c9a133d05",
         "config/redseiko.valheim.pseudonym.cfg": "b3e2c363443cf947ba909ddac4f4caeae5cbc77a1ba78f2e616984dc0d9827f8",
         "config/ru.ivest.valheimvisuals.cfg": "fcaddfcc86f3c66328b02f286552a77eb67805638a3113d3b6c8f8aacfc005f2",
@@ -763,9 +765,9 @@
         "core/MonoMod.Utils.dll": "9d1495f147ac93c4f81f84538c1a326e8f8a6aefc78d6289d798f3ce1162c5e9",
         "plugins/ImpactfulSkills/ImpactfulSkills.dll": "19b9e4268c68af645a2812574797ea9579dfbf5e1b3d8ad9fca3a23f07df8164",
         "plugins/Jotunn/Jotunn.dll": "9509221046842a70f94b98bab4cb41005dee026823a7a79345829ed46a30f796",
-        "plugins/Serverbound/Serverbound.dll": "6f17301a442467f62b2d51c4201ea69b006ff626e2f989d1e5c1262325c8ae6b"
+        "plugins/Serverbound/Serverbound.dll": "952d4826936ec5cd1f1c77065ba9f759a99087905cf0d5e0328b52a600d1cf8e"
       },
-      "logSha256": "082baff124b29f681ab4d806753109e1006adc3e18ae509612b82b5b66955160"
+      "logSha256": "520906936c871f8468013216e2fc1857752178738e44433d11263b2d1f8c7e35"
     },
     {
       "role": "smoke-vcp",
@@ -773,7 +775,7 @@
       "exitCode": 0,
       "initialConfigSha256": "76d81194fbf1908848904263933930b2ae5b4afb9e992716b55b9b715c476562",
       "retiredSettingsRemoved": true,
-      "dllSha256": "6f17301a442467f62b2d51c4201ea69b006ff626e2f989d1e5c1262325c8ae6b",
+      "dllSha256": "952d4826936ec5cd1f1c77065ba9f759a99087905cf0d5e0328b52a600d1cf8e",
       "runtimeInputs": {
         "config/__valheimmods.ValPerfMonitor.Early.cfg": "348b1eb384f1bcf4cbbaccbb6368d8e12af485ee8648f9ae3c002b14c17ddc33",
         "config/_shudnal.ConditionalConfigSync.cfg": "00179f7f054304181ae7f47317f56c783c27aba039029afd392ce390e6a27460",
@@ -830,7 +832,7 @@
         "config/marlthon.OdinShip.cfg": "b0f27c9d722cc74edef612fe6f2173db5a8032ad99ff6050bf649de3dfb9f443",
         "config/marlthon.SeaAnimals.cfg": "0ff655988e258c3a9c319fd2fa9f0a98660482bebaa2db5797dbcefb04be9564",
         "config/MidnightsFX.ImpactfulSkills.cfg": "a9bf79f49e20ea5b912a8483ac8b3e6d43254d8a89219f17cf984b100bb8081c",
-        "config/MidnightsFX.ValheimCommunityPatch.cfg": "8c6a18c57b59edf02202696571f0c1850dd5ad0927efca9b7bfa13e033952b7c",
+        "config/MidnightsFX.ValheimCommunityPatch.cfg": "07787f724ee0b4b1076ee05bbd858590d13a1a7ffb4e1b0721a87ed2c3945661",
         "config/MK_BetterUI.cfg": "6b102076a5baa5f63a5e3df22fe58219df8186410223533a580c20f992c3955b",
         "config/MVP.Valheim_Serverside_Simulations.cfg": "83e2ed23b31cf09d765316e1decd1176536320744b0633a7f0c2105bc7c4a1c7",
         "config/odinplus.TeleportBoats.cfg": "0ee271f164e5a43856ca7b32add72af7cea6fb5808e54a7ba9165953f0316f88",
@@ -839,7 +841,7 @@
         "config/odinplus.TeleportEverything.cfg": "110a1addef876b4dc8aa71a19962248e61d0b37cb10b2995889ad3efd9c2cfcc",
         "config/org.bepinex.plugins.network.cfg": "f5bbddcccd7c5c1fadbe87c7265e99a0b7963fce83a006332c8246bbd602fe92",
         "config/org.bepinex.plugins.spearfishing.cfg": "4757ed4f4ff78d684c98e78f446f5001d808b2bb4001dea1491012d5c1abc117",
-        "config/org.serverbound.valheim.cfg": "47c9b677afe5a2cfa5bf42b94881c29ffe1c0da5e7021e22537a545c32cadcc1",
+        "config/org.serverbound.valheim.cfg": "5a2275e9246f747ecf86c2f925b5d8a0c4719248ad8613863583559cfff0f58b",
         "config/QualityGlowFix.cfg": "c51c53c8a5113c70f97c2bf160927f416427e37e447b9da50c5c1d0c9a133d05",
         "config/redseiko.valheim.pseudonym.cfg": "b3e2c363443cf947ba909ddac4f4caeae5cbc77a1ba78f2e616984dc0d9827f8",
         "config/ru.ivest.valheimvisuals.cfg": "fcaddfcc86f3c66328b02f286552a77eb67805638a3113d3b6c8f8aacfc005f2",
@@ -873,10 +875,10 @@
         "core/MonoMod.RuntimeDetour.dll": "40e49bb314391cd7bddc2644f8553eeba92c194b940836b103df16955c464e0c",
         "core/MonoMod.Utils.dll": "9d1495f147ac93c4f81f84538c1a326e8f8a6aefc78d6289d798f3ce1162c5e9",
         "plugins/Jotunn/Jotunn.dll": "9509221046842a70f94b98bab4cb41005dee026823a7a79345829ed46a30f796",
-        "plugins/Serverbound/Serverbound.dll": "6f17301a442467f62b2d51c4201ea69b006ff626e2f989d1e5c1262325c8ae6b",
-        "plugins/ValheimCommunityPatch/ValheimCommunityPatch.dll": "2218a8ab2f974fa66fb26bb2f49917ce7bacbe72234316cf40a65523fcfe2e81"
+        "plugins/Serverbound/Serverbound.dll": "952d4826936ec5cd1f1c77065ba9f759a99087905cf0d5e0328b52a600d1cf8e",
+        "plugins/ValheimCommunityPatch/ValheimCommunityPatch.dll": "c3726d510f6081d5beaeac4241e1ac107e2382069688055deccf9e5418f58b46"
       },
-      "logSha256": "9f56fa4ead22f0d916fdfe5c8cde1f8e350fe86b153421c6c3a11da3fa3db3e0"
+      "logSha256": "0a650d8179922aa5cf4f417be25d9249d14ede210ae81f0fbf4c3b55fbbb557e"
     },
     {
       "role": "smoke-profile",
@@ -884,7 +886,7 @@
       "exitCode": 0,
       "initialConfigSha256": "83e2ed23b31cf09d765316e1decd1176536320744b0633a7f0c2105bc7c4a1c7",
       "retiredSettingsRemoved": true,
-      "dllSha256": "6f17301a442467f62b2d51c4201ea69b006ff626e2f989d1e5c1262325c8ae6b",
+      "dllSha256": "952d4826936ec5cd1f1c77065ba9f759a99087905cf0d5e0328b52a600d1cf8e",
       "runtimeInputs": {
         "config/__valheimmods.ValPerfMonitor.Early.cfg": "348b1eb384f1bcf4cbbaccbb6368d8e12af485ee8648f9ae3c002b14c17ddc33",
         "config/_shudnal.ConditionalConfigSync.cfg": "00179f7f054304181ae7f47317f56c783c27aba039029afd392ce390e6a27460",
@@ -923,7 +925,7 @@
         "config/com.ValheimModding.NewtonsoftJsonDetector.cfg": "3732e176135341a59635f81b9d708ad43a314648b661936865e97fdaf7b1e33c",
         "config/com.ValheimModding.YamlDotNetDetector.cfg": "952b290bd201ed95ea8a733eae836eaeacc11d2e18f09de67a80d3b3ed48a351",
         "config/communityfixes.valheim.bluebrazier.nsslf.cfg": "8c46038251862b1313b4b7bd4513c89f36226bebbd0713427050062696c4ff56",
-        "config/DeepNorthCompat.cfg": "71c2e24762afa52d47cc404d4a7442289a3d53f3e3c1dc409e7dc59b285f7f06",
+        "config/DeepNorthCompat.cfg": "4bc576ab022457e32cca59297c04dbd75af2800b68307fc4ff86098635cbe1c2",
         "config/DeepNorthCompat.Diagnostics.VpoWaterProbe.cfg": "a6710447ad6dfb6dad6f04decd90ca5d52550a144ec742978df2962c19a1e05a",
         "config/dev.crystal.properportals.cfg": "e0f097f44c657b3eaddc5ea75150c8fc924f71053fb317dc308179e3cf998bf0",
         "config/dev.local.valheimvisualenhanced.cfg": "9e352db582c903887fd7850182e064475bf87131a1c4739b3985225bb19bf95a",
@@ -941,7 +943,7 @@
         "config/marlthon.OdinShip.cfg": "b0f27c9d722cc74edef612fe6f2173db5a8032ad99ff6050bf649de3dfb9f443",
         "config/marlthon.SeaAnimals.cfg": "0ff655988e258c3a9c319fd2fa9f0a98660482bebaa2db5797dbcefb04be9564",
         "config/MidnightsFX.ImpactfulSkills.cfg": "37e59673166387e75d48eb8c4099cc82bf2849d999e1c4c128ba62fde3261c64",
-        "config/MidnightsFX.ValheimCommunityPatch.cfg": "8c6a18c57b59edf02202696571f0c1850dd5ad0927efca9b7bfa13e033952b7c",
+        "config/MidnightsFX.ValheimCommunityPatch.cfg": "07787f724ee0b4b1076ee05bbd858590d13a1a7ffb4e1b0721a87ed2c3945661",
         "config/MK_BetterUI.cfg": "6b102076a5baa5f63a5e3df22fe58219df8186410223533a580c20f992c3955b",
         "config/MVP.Valheim_Serverside_Simulations.cfg": "83e2ed23b31cf09d765316e1decd1176536320744b0633a7f0c2105bc7c4a1c7",
         "config/odinplus.TeleportBoats.cfg": "0ee271f164e5a43856ca7b32add72af7cea6fb5808e54a7ba9165953f0316f88",
@@ -950,7 +952,7 @@
         "config/odinplus.TeleportEverything.cfg": "110a1addef876b4dc8aa71a19962248e61d0b37cb10b2995889ad3efd9c2cfcc",
         "config/org.bepinex.plugins.network.cfg": "f5bbddcccd7c5c1fadbe87c7265e99a0b7963fce83a006332c8246bbd602fe92",
         "config/org.bepinex.plugins.spearfishing.cfg": "4757ed4f4ff78d684c98e78f446f5001d808b2bb4001dea1491012d5c1abc117",
-        "config/org.serverbound.valheim.cfg": "b158cd612f72ffb570c4f3103e2b1b141a807939381ac71f4721f9a501c20e07",
+        "config/org.serverbound.valheim.cfg": "7f690154eb5ce89715ca7d99e20c4fa953cc5df89b121615736c40124a639f22",
         "config/QualityGlowFix.cfg": "c51c53c8a5113c70f97c2bf160927f416427e37e447b9da50c5c1d0c9a133d05",
         "config/redseiko.valheim.pseudonym.cfg": "b3e2c363443cf947ba909ddac4f4caeae5cbc77a1ba78f2e616984dc0d9827f8",
         "config/ru.ivest.valheimvisuals.cfg": "fcaddfcc86f3c66328b02f286552a77eb67805638a3113d3b6c8f8aacfc005f2",
@@ -960,7 +962,7 @@
         "config/shudnal.ConditionalConfigSync/ConditionalConfigSync.HiddenConfigs.cfg": "0f12e7d78ad2d5e3b586bbbfd2389a69e58fe764d611a09003a080cefe70ee41",
         "config/shudnal.ConditionalConfigSync/ConditionalConfigSync.ModRequirements.cfg": "3877ad3b0d087836a73ed63275e0181dd13556c8b812306ec788a9ab3f863205",
         "config/shudnal.ConditionalConfigSync/ConditionalConfigSync.SyncPolicy.cfg": "ca5b76c605420b7f0fdf8625329aac8a5c371cc43b38b83bd8fe32379f0dc9e6",
-        "config/shudnal.MyLittleUI.cfg": "412ca897d484b0f69052ad8b26fda48636f83cfd2136f4d39ea08e306feb9827",
+        "config/shudnal.MyLittleUI.cfg": "e8f2269313c8329dd2ec8de92b208ea20f412d1d925a54c46f08ce3bf7ad167d",
         "config/sighsorry.DiveIn.cfg": "da8621a7eed362579f18f3f96114c4cebf26a17b41c342f90cee936428b57fc2",
         "config/StartupAccelerator.cfg": "f3786c859eeed0c0ca00491813d7213319ab4d5a99cf5c0c4312412aa35c8b44",
         "config/tastychickenlegs.BlastFurnaceTakesAll.cfg": "3685d02736e5ca5f5b6986c469d56765532aed629deb33eabaaadecc56ee565f",
@@ -983,8 +985,8 @@
         "core/Mono.Cecil.Rocks.dll": "54ac539fb5ddc8b44c0e9acd0fcb7324f89d1a072edf8ebc1b06dd691e3d3927",
         "core/MonoMod.RuntimeDetour.dll": "40e49bb314391cd7bddc2644f8553eeba92c194b940836b103df16955c464e0c",
         "core/MonoMod.Utils.dll": "9d1495f147ac93c4f81f84538c1a326e8f8a6aefc78d6289d798f3ce1162c5e9",
-        "DumpedAssemblies/valheim_server/DeepNorthCompat.dll": "fca5f730bc911f7cf7d43eb881ab1ef088614c2b15bcd2f937f0f7137ab873e3",
-        "DumpedAssemblies/valheim_server/MyLittleUI.dll": "23a0825b4172753d629631d37210ecea3d800a9f715221d13277f0a0f8af4ace",
+        "DumpedAssemblies/valheim_server/DeepNorthCompat.dll": "365feaa1b30df4820e8a1930c86e032f60cf94640fd37ffba61485b09351e2da",
+        "DumpedAssemblies/valheim_server/MyLittleUI.dll": "4b4f3b462eb1b298fb11e36c8df55a076d4e24e0f701ee2f1a52bbd1ee7fe995",
         "DumpedAssemblies/valheim_server/QuickStackStore.dll": "0c626dbf91b4d5f0753e4bc441d46ca038b8e8deab0c44863805d2d079232234",
         "patchers/Smoothbrain-StartupAccelerator/StartupAccelerator.dll": "489297e61efa1698dbc616068d50ba8e70c290f8695eb1b08e15e1759e163790",
         "patchers/ValPerfMonitor.Preloader.dll": "ef4b147e3e1fe00d4cbe0a56bf3153362b9d15ff5624a2adb4ab885f2a360e5f",
@@ -1017,7 +1019,7 @@
         "plugins/Azumatt-Where_You_At/WhereYouAt.dll": "6d4b801e727682644d3c7430fbf509c61aba96c442b222ab0d000fc98399a241",
         "plugins/BetterUI_ForeverMaintained-BetterUI_ForeverMaintained/BetterUI.dll": "c269f42262f41aa0bd45729eaf07218de751b23476355d52b4046e66d822a88c",
         "plugins/ComfyMods-Pseudonym/Pseudonym.dll": "489de93e726c24e0d76e6706502bc063319e2acbac0d582b72c037f4f6feb0c6",
-        "plugins/DeepNorthCompat/DeepNorthCompat.dll": "99054c83dbf3e35a3b1eba70d5854b3dba33e4d8692ba4478756b3654faee84e",
+        "plugins/DeepNorthCompat/DeepNorthCompat.dll": "cf1ca169348b23e09ad8968013e5ca8b9d6345addfeded0876ff670b398fc19e",
         "plugins/Digitalroot-Better_Wisps/Digitalroot.Valheim.BetterWisps.dll": "ae30607a51625bca1b049005a474ee8a8bbbfb9ee7e6bff2e525ba4488ffe000",
         "plugins/Digitalroot-Digitalroots_Slope_Combat_Assistance/Digitalroot.SlopeCombatAssistance.dll": "8c3555b4d34e7e6a47c439e552e068a69744757601dca36c71103cc863219ca3",
         "plugins/Digitalroot-Heightmap_Unlimited_JvL/Digitalroot.HeightmapUnlimitedJvL.dll": "f7c2c869ca3cae30309d657984197b700c9e541c6c18d264ae8e422a9969d4a9",
@@ -1033,7 +1035,7 @@
         "plugins/Marlthon-OdinShip/OdinShip.dll": "5d5817bc169677db49cae55986b3f6a178ab3bf0b1d681a2aba4ecc5dac067d0",
         "plugins/Marlthon-SeaAnimals/SeaAnimals.dll": "3f57f6ad089d5616a924d5917851a0a7c99715cc0b2062ef23b2fa15d07c721a",
         "plugins/MidnightMods-ImpactfulSkills/ImpactfulSkills.dll": "19b9e4268c68af645a2812574797ea9579dfbf5e1b3d8ad9fca3a23f07df8164",
-        "plugins/MidnightMods-ValheimCommunityPatch/ValheimCommunityPatch.dll": "2218a8ab2f974fa66fb26bb2f49917ce7bacbe72234316cf40a65523fcfe2e81",
+        "plugins/MidnightMods-ValheimCommunityPatch/ValheimCommunityPatch.dll": "c3726d510f6081d5beaeac4241e1ac107e2382069688055deccf9e5418f58b46",
         "plugins/MSchmoecker-MultiUserChest/MultiUserChest.dll": "afe0d6b437495fb6624a049ba72c2393572c8c02e1221ac090f16c0d99914514",
         "plugins/OdinPlus-QuickTeleport/QuickTeleport.dll": "4b41a9ec48f44f92d4aa2780b7a7d89effb6149866bd7f45473ebf4ae3d8d008",
         "plugins/OdinPlus-TeleportBoats/TeleportBoats.dll": "599fcda334f11fec4d7526cd641861cc749b75a768dc4b0bec8bd6db2be1c7e9",
@@ -1047,11 +1049,11 @@
         "plugins/ontrigger-ValheimPerformanceOptimizations/VPOBurst_Managed.dll": "05af1ca87068ac676b3cf56a02e1aa797ed1f4a703e95497c60fc5fbfc7b383d",
         "plugins/ontrigger-ValheimPerformanceOptimizations/VPOBurst_win_x86_64.dll": "bc112b1a74fef0d5028e7abb3014026183175df7724853dccb44a188d57bda46",
         "plugins/Pumpkin-ValheimVisualEnhanced/ValheimVisualEnhanced/ValheimVisualEnhanced.dll": "7ab45ba3a294c82e759dab24cf47f3529bb891efcd6a882d7b302657331e8d21",
-        "plugins/Serverbound/Serverbound.dll": "6f17301a442467f62b2d51c4201ea69b006ff626e2f989d1e5c1262325c8ae6b",
+        "plugins/Serverbound/Serverbound.dll": "952d4826936ec5cd1f1c77065ba9f759a99087905cf0d5e0328b52a600d1cf8e",
         "plugins/shudnal-ConditionalConfigSync/ConditionalConfigSync.dll": "9e3aa79de10b31a4ee06e7cd94faf46d87b3bf3ec64ea3d15b07a396836f8b8a",
         "plugins/shudnal-ConditionalConfigSync/ConditionalConfigSync.Plugin.dll": "9aa35c2ce769dfefb01bcdec77cf2c64227ce7c41b995a2b982516449c18290f",
         "plugins/shudnal-ConfigurationManager/ConfigurationManager.dll": "99f6e20e004050b6cd997a10baeb1b78308e919cda21c52192b8ba67d68856dd",
-        "plugins/shudnal-MyLittleUI/MyLittleUI.dll": "22413d8e16c194bf97b566279f3bcf2e9525d3cc487cf2bac33e9520219d48a6",
+        "plugins/shudnal-MyLittleUI/MyLittleUI.dll": "7834183b0e3ccd1d811848c746e25d0f344dfa07a5d523bc34bbd0eb1183db01",
         "plugins/sighsorry-Dive_In/DiveIn.dll": "038f3ff6de6ff55d645367275145a3df9fd5a9351b9dba6a57a9679cfde53394",
         "plugins/Smoothbrain-ComfortTweaks/ComfortTweaks.dll": "ab6e31f25c37bbb4da04401f1310619fdd5dfbdbd40f6e852a47c35dab5183b6",
         "plugins/Smoothbrain-Network/Network.dll": "e4400a2f4e3d7dd96b11add578d0dc5ccab0b2ca08dd88a85c2b9778941ebb94",
@@ -1068,12 +1070,12 @@
         "plugins/ZenDragon-Zen_ModLib/Zen.ModLib.dll": "73703e097014d2488a893499714de0b53775fe357ba3b421bff6dccd691438e7",
         "plugins/ZenDragon-ZenCombat/ZenCombat.dll": "dc23443679859721df2107d6c2b44dda1c9e8f4a0c3c9cb765c6410786160ed8"
       },
-      "logSha256": "d3b3ccd7f6faeae7336a1a50b8e84bd281c59917e8ac3841c61ae2a86c0bf82f"
+      "logSha256": "316703fce99bb6ab5051035c3a411119c9c75049cd776d9890f99e711b76e345"
     }
   ],
   "multiplayerAccepted": false,
   "performanceMeasured": false,
-  "releaseScope": "Serverbound 0.1.18 release with incomplete multiplayer and performance acceptance",
+  "releaseScope": "Serverbound 0.1.19 release with incomplete multiplayer and performance acceptance",
   "followUp": [
     "Multiplayer acceptance matrix",
     "Extended multiplayer and optional-mod performance acceptance"

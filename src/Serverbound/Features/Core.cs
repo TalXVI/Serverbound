@@ -16,6 +16,8 @@ namespace Serverbound.Features
 {
 	public class Core : IFeature
 	{
+		private static readonly int RequestResponsHash = "RequestRespons".GetStableHashCode();
+
 		public bool FeatureEnabled()
 		{
 			return true;
@@ -155,6 +157,8 @@ namespace Serverbound.Features
 
 			private static bool Prefix(ZNetScene __instance)
 			{
+				if (CoreVerification.Blocked) return true;
+
 				// Reuses the lists vanilla uses for the same purpose instead of allocating two per call.
 				List<ZDO> currentObjects = __instance.m_tempCurrentObjects;
 				List<ZDO> currentDistantObjects = __instance.m_tempCurrentDistantObjects;
@@ -220,6 +224,7 @@ namespace Serverbound.Features
 			{
 				List<CodeInstruction> codes = instructions.ToList();
 				int found = codes.Count(code => code.Calls(distanceSqr));
+				CoreVerification.Record(__originalMethod, found == 1);
 				if (found != 1)
 				{
 					Plugin.logger.LogWarning($"{__originalMethod.DeclaringType.Name}.{__originalMethod.Name}: found {found} sort distance call(s), expected 1. The game changed this method; it was left unchanged and the patch needs reviewing.");
@@ -231,6 +236,8 @@ namespace Serverbound.Features
 			// Same signature as the Utils.DistanceSqr call it replaces; the reference position is only a fallback.
 			public static float NearestPeerDistanceSqr(Vector3 referencePosition, Vector3 position)
 			{
+				if (CoreVerification.Blocked) return Utils.DistanceSqr(referencePosition, position);
+
 				if (s_peerPositionsFrame != Time.frameCount)
 				{
 					s_peerPositionsFrame = Time.frameCount;
@@ -270,6 +277,8 @@ namespace Serverbound.Features
 		{
 			private static bool Prefix(ZoneSystem __instance, ref bool __result)
 			{
+				if (CoreVerification.Blocked) return true;
+
 				SimulationDistance distance = __instance.m_simulationDistance;
 				int near = distance.NearSimulationDistance;
 				foreach (ZNetPeer peer in ZNet.instance.GetPeers())
@@ -329,6 +338,8 @@ namespace Serverbound.Features
 		{
 			static bool Prefix(ZoneSystem __instance)
 			{
+				if (CoreVerification.Blocked) return true;
+
 				if (ZNet.GetConnectionStatus() != ZNet.ConnectionStatus.Connected
 					|| (ZNet.instance.IsServer() && !__instance.LocationsGenerated))
 				{
@@ -369,10 +380,11 @@ namespace Serverbound.Features
 			{
 				int budget = Configuration.maxZonesPerTick.Value > 0 ? Configuration.maxZonesPerTick.Value : int.MaxValue;
 				int count = peers.Count;
+				int start = s_nextPeer;
 				int spawned = 0;
 				for (int n = 0; n < count && spawned < budget; n++)
 				{
-					int index = (s_nextPeer + n) % count;
+					int index = (start + n) % count;
 					if (!peers[index].IsReady())
 					{
 						continue;
@@ -400,6 +412,8 @@ namespace Serverbound.Features
 		{
 			static bool Prefix(ZDOMan __instance, Vector3 refPosition, long uid)
 			{
+				if (CoreVerification.Blocked) return true;
+
 				Vector2s zone = ZoneSystem.GetZone(refPosition);
 				List<ZDO> nearObjects = __instance.m_tempNearObjects;
 				nearObjects.Clear();
@@ -466,6 +480,8 @@ namespace Serverbound.Features
 			local player's position would throw on every fixed step of an event.
 		*/
 		{
+			static bool Prefix() => !CoreVerification.Blocked;
+
 			private static readonly MethodInfo isAnyPlayerInEventArea = AccessTools.Method(typeof(RandEventSystem), "IsAnyPlayerInEventArea");
 			private static readonly MethodInfo isInsideRandomEventArea = AccessTools.Method(typeof(RandEventSystem), "IsInsideRandomEventArea");
 			private static readonly MethodInfo opImplicit = AccessTools.Method(typeof(UnityEngine.Object), "op_Implicit");
@@ -476,7 +492,8 @@ namespace Serverbound.Features
 
 			static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
 			{
-				List<CodeInstruction> codes = instructions.ToList();
+				List<CodeInstruction> original = instructions.ToList();
+				List<CodeInstruction> codes = original.Select(i => new CodeInstruction(i)).ToList();
 
 				// bool playerInArea = IsAnyPlayerInEventArea(m_randomEvent);
 				int anyPlayer = codes.FindIndex(code => code.Calls(isAnyPlayerInEventArea));
@@ -501,11 +518,14 @@ namespace Serverbound.Features
 
 				if (loadPlayerInArea == null || check < 0 || !insideMatches)
 				{
+					CoreVerification.Record(__originalMethod, false);
 					string missing = loadPlayerInArea == null ? "the IsAnyPlayerInEventArea result"
 						: check < 0 ? "the local player check" : "the IsInsideRandomEventArea call for the local player";
 					Plugin.logger.LogWarning($"{__originalMethod.DeclaringType.Name}.{__originalMethod.Name}: {missing} not found; left unchanged, so random events will not become active on the server. The game changed this method; the patch needs reviewing.");
-					return codes;
+					return original;
 				}
+
+				CoreVerification.Record(__originalMethod, true);
 
 				codes[check] = new CodeInstruction(codes[check]) { opcode = codes[check].opcode == OpCodes.Brfalse_S ? OpCodes.Brtrue_S : OpCodes.Brtrue };
 				for (int i = first; i <= inside; i++)
@@ -565,6 +585,8 @@ namespace Serverbound.Features
 			Both sites or neither: if one is missing the method is left as it is, with a warning.
 		*/
 		{
+			static bool Prefix() => !CoreVerification.Blocked;
+
 			private static readonly FieldInfo localPlayer = AccessTools.Field(typeof(Player), nameof(Player.m_localPlayer));
 			private static readonly MethodInfo ownerEquality = AccessTools.Method(typeof(UnityEngine.Object), "op_Equality");
 			private static readonly MethodInfo currentSpawners = AccessTools.Method(typeof(RandEventSystem), nameof(RandEventSystem.GetCurrentSpawners));
@@ -592,12 +614,15 @@ namespace Serverbound.Features
 				// Insert(Ldarg_0) lands before the call, so a branch or block targeting it would skip the argument.
 				if (!check || !matcher.IsValid || !ILMatch.Plain(matcher.Instruction))
 				{
+					CoreVerification.Record(__originalMethod, false);
 					string missing = !check ? "the local player check not found"
 						: !matcher.IsValid ? "the RandEventSystem.GetCurrentSpawners call not found"
 						: "the RandEventSystem.GetCurrentSpawners call carries a branch label";
 					Plugin.logger.LogWarning($"{__originalMethod.DeclaringType.Name}.{__originalMethod.Name}: {missing}; left unchanged, so the server will not spawn creatures. The game changed this method; the patch needs reviewing.");
 					return original;
 				}
+				CoreVerification.Record(__originalMethod, true);
+
 				// RandEventSystem.instance.GetCurrentSpawners()  ->  Core.GetCurrentSpawners(RandEventSystem.instance, this)
 				matcher.Opcode = OpCodes.Call;
 				matcher.Operand = serverSpawners;
@@ -613,6 +638,8 @@ namespace Serverbound.Features
 			// direct call with the dedicated server's otherwise inactive reference zone.
 			static bool Prefix(ref bool __result, Vector3 point)
 			{
+				if (CoreVerification.Blocked) return true;
+
 				__result = true;
 				foreach (ZNetPeer znetPeer in ZNet.instance.GetPeers())
 				{
@@ -626,6 +653,32 @@ namespace Serverbound.Features
 			}
 		}
 
+		[HarmonyPatch(typeof(ZRoutedRpc), "RPC_RoutedRPC")]
+		public static class ZRoutedRpc_RPC_RoutedRPC_Patch
+		{
+			static bool Prefix(ZRoutedRpc __instance, ZRpc rpc, ZPackage pkg)
+			{
+				if (CoreVerification.Failed || !__instance.m_server) return true;
+
+				int position = pkg.GetPos();
+				try
+				{
+					pkg.ReadLong(); // Message ID.
+					long sender = pkg.ReadLong();
+					pkg.ReadLong(); // Recipient.
+					pkg.ReadZDOID();
+					if (pkg.ReadInt() != RequestResponsHash) return true;
+
+					// Clients send directly to the server. Only the server relays peer responses.
+					return __instance.m_peers.Any(peer => peer.m_rpc == rpc && peer.IsReady() && peer.m_uid == sender);
+				}
+				finally
+				{
+					pkg.SetPos(position);
+				}
+			}
+		}
+
 		[HarmonyPatch(typeof(ZRoutedRpc), "RouteRPC")]
 		public static class ZRoutedRpc_RouteRPC_Patch
 		/*
@@ -636,17 +689,34 @@ namespace Serverbound.Features
 			Allows players to drive ships with no roundtrip latency.
 		*/
 		{
-			static void Prefix(ZRoutedRpc.RoutedRPCData rpcData)
+			static void Prefix(ZRoutedRpc __instance, ZRoutedRpc.RoutedRPCData rpcData)
 			{
-				if (rpcData.m_methodHash == "RequestRespons".GetStableHashCode())
+				if (CoreVerification.Blocked || rpcData.m_methodHash != RequestResponsHash) return;
+
+				ZDO zdo = ZDOMan.instance.GetZDO(rpcData.m_targetZDO);
+				if (zdo == null || zdo.GetOwner() != rpcData.m_senderPeerID || zdo.GetInt("InUse", 0) != 0
+					|| !__instance.m_peers.Any(peer => peer.m_uid == rpcData.m_targetPeerID && peer.IsReady())) return;
+
+				ZNetView view = ZNetScene.instance.FindInstance(zdo);
+				Ship ship = view ? view.GetComponent<Ship>() : null;
+				if (!ship || ship.m_nview != view || !ship.m_players.Any(player => player && player.GetOwner() == rpcData.m_targetPeerID)) return;
+
+				ZPackage parameters = rpcData.m_parameters;
+				if (parameters.Size() != 1) return;
+
+				int position = parameters.GetPos();
+				try
 				{
-					bool granted = rpcData.m_parameters.ReadBool();
-					ZDO zdo = ZDOMan.instance.GetZDO(rpcData.m_targetZDO);
-					if (zdo != null && granted)
+					parameters.SetPos(0);
+					if (parameters.ReadBool())
 					{
 						Plugin.logger.LogDebug($"RequestRespons: Setting ship's owner to {rpcData.m_targetPeerID}");
 						zdo.SetOwner(rpcData.m_targetPeerID);
 					}
+				}
+				finally
+				{
+					parameters.SetPos(position);
 				}
 			}
 		}
@@ -688,6 +758,8 @@ namespace Serverbound.Features
 		{
 			static bool Prefix(ref Ship __instance)
 			{
+				if (CoreVerification.Blocked) return true;
+
 				// Vanilla's own check: the timer keeps running for a moment after the ship is removed.
 				if (!__instance.m_nview.IsValid())
 				{

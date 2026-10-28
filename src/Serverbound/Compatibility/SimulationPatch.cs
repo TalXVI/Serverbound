@@ -34,6 +34,8 @@ namespace Serverbound.Compatibility
 
         internal static bool CoreActive()
         {
+            if (CoreVerification.Failed) return false;
+
             foreach ((Type type, string target, string patch) in new[]
             {
                 (typeof(ZNetScene), "CreateDestroyObjects", "CreateDestroyObjects_Patch"),

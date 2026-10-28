@@ -25,12 +25,31 @@ namespace Serverbound.Features
 		Re-running the check once the position is stored tells them. A player already told has no
 		entry left to match, so nothing is sent twice. Reported for 1.0 by ValheimCommunityPatch
 		("Fix Teleport Ghost Players").
+
+		Portal changes: portals live in their own save chunk. Local data and ownership revisions
+		call SetDirtySector, so that method must route portals to SetDirtyPortals. This also covers
+		received updates when SaveClientChanges is enabled; VCP can keep owning received updates.
 	*/
 	public class Fixes : IFeature
 	{
 		public bool FeatureEnabled()
 		{
-			return Configuration.fixSaveClientChanges.Value || Configuration.fixTeleportGhosts.Value;
+			return true;
+		}
+
+		// Portals are saved in ChunkPortal, outside the sector-to-chunk mapping.
+		private static bool IsPortal(ZDO zdo) => Game.instance && Game.instance.PortalPrefabHash.Contains(zdo.GetPrefab());
+
+		[HarmonyPatch(typeof(ZDOMan), "SetDirtySector")]
+		public static class ZDOMan_SetDirtySector_Patch
+		{
+			static bool Prefix(ZDOMan __instance, ZDO zdo)
+			{
+				if (!zdo.Persistent || !IsPortal(zdo)) return true;
+
+				__instance.SetDirtyPortals();
+				return false;
+			}
 		}
 
 		[HarmonyPatch(typeof(ZDO), "Deserialize")]
@@ -60,7 +79,7 @@ namespace Serverbound.Features
 					return;
 				}
 				// Portals are not filed by sector at all (ZDO.SetSector returns early for them).
-				if (FiledSector(__instance) == __state || (Game.instance && Game.instance.PortalPrefabHash.Contains(__instance.GetPrefab())))
+				if (FiledSector(__instance) == __state || IsPortal(__instance))
 				{
 					return;
 				}

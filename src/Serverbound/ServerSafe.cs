@@ -48,8 +48,8 @@ namespace Serverbound
 
 		/*
 			Replaces each `ldsfld Player::m_localPlayer; callvirt GetZDOID|GetPlayerID|GetPlayerName`
-			pair with a call to the matching helper, carrying over labels and exception blocks so
-			branch targets stay intact.
+			pair with a call to the matching helper. Labels and blocks on the first instruction
+			are retained; the second instruction must have none.
 
 			`expected` is how many pairs the method had when the patch was written. A different count
 			means the game changed the method, so it is logged -- a transpiler that silently stops
@@ -57,9 +57,11 @@ namespace Serverbound
 		*/
 		public static IEnumerable<CodeInstruction> NullSafeLocalPlayer(IEnumerable<CodeInstruction> instructions, MethodBase original, int expected)
 		{
-			List<CodeInstruction> codes = instructions.ToList();
+			List<CodeInstruction> codes = instructions.Select(i => new CodeInstruction(i)).ToList();
 			int[] sites = Enumerable.Range(0, codes.Count).Where(i => ILMatch.Shape(codes, i, ILMatch.Loads(localPlayer), Replacement)).ToArray();
-			if (sites.Length != expected)
+			bool matched = sites.Length == expected && sites.All(i => ILMatch.Plain(codes[i + 1]));
+			CoreVerification.Record(original, matched);
+			if (!matched)
 			{
 				Plugin.logger.LogWarning($"{original.DeclaringType.Name}.{original.Name}: found {sites.Length} Player.m_localPlayer call(s), expected {expected}. The game changed this method; it was left unchanged and the patch needs reviewing.");
 				return codes;
@@ -69,9 +71,7 @@ namespace Serverbound
 				int i = sites[s];
 				CodeInstruction call = new CodeInstruction(OpCodes.Call, Replacements[((MethodInfo)codes[i + 1].operand).Name]);
 				call.labels.AddRange(codes[i].labels);
-				call.labels.AddRange(codes[i + 1].labels);
 				call.blocks.AddRange(codes[i].blocks);
-				call.blocks.AddRange(codes[i + 1].blocks);
 				codes[i] = call;
 				codes.RemoveAt(i + 1);
 			}

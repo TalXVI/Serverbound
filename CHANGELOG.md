@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.19
+
+- Supports ValheimCommunityPatch 0.39.0 while retaining previously supported builds.
+- Saves local portal changes in the portal save chunk, including when the community patch handles received changes.
+- Validates ship-control grants against the sending owner and the ready player aboard the ship.
+- Disables simulation when a required Core rewrite fails, including after another mod repatches it.
+- Shares zone generation fairly among ready players when more than one zone can be generated per tick.
+
 ## 0.1.18
 
 - Supports ImpactfulSkills 0.26.0 while retaining previously supported builds. Owner-side skill bonuses keep their existing behavior.

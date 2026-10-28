@@ -121,6 +121,45 @@ internal static class SimulationTests
             Check(!Harmony.GetAllPatchedMethods().SelectMany(m => Patches(m)).Any(p => IsConflict(p.PatchMethod)), "conflicting hooks remain");
             string[] after = Snapshot(); Call(simulation, "Verify"); Check(after.SequenceEqual(Snapshot()), "non-idempotent verification");
         });
+        Type? missingPrefab = vcp.GetType("ValheimCommunityPatch.Patches.Correctness.MissingPrefabLogSpamPatch");
+        if (missingPrefab != null) Case("retains VCP missing-prefab logging with nearest-player object ordering", () =>
+        {
+            var cfg = new ConfigFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "sandbox/vcp-never-written.cfg"), false) { SaveOnConfigSet = false };
+            Type config = vcp.GetType("ValheimCommunityPatch.ValConfig", true)!;
+            FieldInfo configField = AccessTools.Field(config, "cfg");
+            object? previousConfig = configField.GetValue(null);
+
+            try
+            {
+                configField.SetValue(null, cfg);
+                Call(missingPrefab, "BindConfig");
+                RegisterCore(); RegisterVendors();
+                MethodInfo target = AccessTools.Method(typeof(ZNetScene), "CreateObjectsSorted");
+                Type ordering = typeof(Serverbound.Features.Core.ZNetScene_CreateObjectsSorted_Patch);
+                MethodInfo nearest = AccessTools.Method(ordering, "NearestPeerDistanceSqr");
+                MethodInfo sink = AccessTools.Method(missingPrefab, "DestroyedSink");
+                new Harmony(Core).Patch(target, transpiler: new HarmonyMethod(AccessTools.Method(ordering, "Transpiler")));
+                var vendor = new Harmony("MidnightsFX.ValheimCommunityPatch");
+                vendor.PatchAll(missingPrefab);
+                foreach ((string type, string method, string hook) in new[]
+                {
+                    ("SpawnQueueCachePatch", "CreateObjectsSorted", "CreateObjectsSortedPrefix"),
+                    ("ZoneDiffRemovalPatch", "RemoveObjects", "RemoveObjectsPrefix")
+                }) vendor.Patch(AccessTools.Method(typeof(ZNetScene), method), prefix: new HarmonyMethod(
+                    AccessTools.Method(vcp.GetType("ValheimCommunityPatch.Patches.Performance." + type, true), hook)));
+                Serverbound.Settings.Configuration.compatVcpSpawnQueue = cfg.Bind("Compat", "ValheimCommunityPatchSpawnQueue", false);
+                Serverbound.Settings.Configuration.compatVcpUnload = cfg.Bind("Compat", "ValheimCommunityPatchUnload", false);
+                Plugin.logger = new BepInEx.Logging.ManualLogSource("offline Serverbound");
+                Plugin.harmony = new Harmony(Plugin.PluginGUID);
+
+                Prepare(); Call(simulation, "Verify"); ForkVcpHook().Invoke(null, null);
+
+                var instructions = PatchProcessor.GetCurrentInstructions(target);
+                Check(Active && instructions.Any(code => code.Calls(nearest)), "nearest-player ordering was lost");
+                Check(instructions.Any(code => code.Calls(sink)), "VCP's missing-prefab logging was lost");
+            }
+            finally { configField.SetValue(null, previousConfig); }
+        });
         Case("late registration activates the Serverbound's actual VCP takeover", () =>
         {
             RegisterCore(); RegisterVendors();
