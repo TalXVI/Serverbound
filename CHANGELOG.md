@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.20
+
+- Supports Valheim 1.0.21 Windows clients and Windows/Linux dedicated servers, and ValheimCommunityPatch 0.39.1. Earlier supported builds remain supported.
+- Stops reporting false warnings for absent optional Core hooks. Required patch checks remain in place.
+
 ## 0.1.19
 
 - Supports ValheimCommunityPatch 0.39.0 while retaining previously supported builds.

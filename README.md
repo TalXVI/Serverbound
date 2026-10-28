@@ -5,7 +5,7 @@ Serverbound moves Valheim's world and AI simulation onto the dedicated server. P
 ## Install
 
 1. Back up the world and configuration, then stop the server.
-2. Install BepInExPack_Valheim 5.4.2351 and remove predecessor simulation DLLs.
+2. Install BepInExPack_Valheim 5.4.2351 or newer and remove predecessor simulation DLLs.
 3. Extract the package into the server directory. The DLL belongs at `BepInEx/plugins/Serverbound/Serverbound.dll`.
 4. Start once to generate `BepInEx/config/org.serverbound.valheim.cfg`. Stop before editing it.
 5. Restart and check `BepInEx/LogOutput.log` for `Simulation: APPLIED`.
@@ -24,14 +24,14 @@ The new assembly and namespace are `Serverbound`; the plugin GUID is `org.server
 
 ## Supported builds
 
-Serverbound accepts audited Valheim 1.0.16, 1.0.17, and 1.0.20 Windows client and Windows/Linux dedicated assemblies. It rejects unsupported assembly hashes.
+Serverbound accepts audited Valheim 1.0.16, 1.0.17, 1.0.20, and 1.0.21 Windows client and Windows/Linux dedicated assemblies. It rejects unsupported assembly hashes.
 
 ## Verified supported mods
 
 | Mod | Verified version |
 |---|---|
 | ValheimPerformanceOptimizations | 1.2.3 |
-| ValheimCommunityPatch | 0.34.1, 0.35.0, 0.35.1, 0.36.0, 0.36.1, 0.37.0, 0.38.0, 0.39.0 |
+| ValheimCommunityPatch | 0.34.1, 0.35.0, 0.35.1, 0.36.0, 0.36.1, 0.37.0, 0.38.0, 0.39.0, 0.39.1 |
 | ImpactfulSkills | 0.21.0, 0.21.1, 0.21.3, 0.22.0, 0.22.1, 0.23.0, 0.24.0, 0.25.0, 0.26.0 |
 | ValheimTune | 0.7.9, 0.7.10 |
 | Heightmap Unlimited JvL | 2.0.2 |
@@ -45,7 +45,7 @@ With VCP 0.37.0, Serverbound runs VCP's Love Potion spawn fix on the dedicated s
 
 ### ComfortTweaks portals
 
-With ComfortTweaks 3.3.11 on Valheim 1.0.20 dedicated servers, Serverbound removes the client-only rested check from portal triggers. This prevents repeated null-reference exceptions when a nonplayer collider enters a portal. Client portal rules remain unchanged. Check the server log for `ComfortPortals: APPLIED`.
+With ComfortTweaks 3.3.11 on Valheim 1.0.20 and 1.0.21 dedicated servers, Serverbound removes the client-only rested check from portal triggers. This prevents repeated null-reference exceptions when a nonplayer collider enters a portal. Client portal rules remain unchanged. Check the server log for `ComfortPortals: APPLIED`.
 
 ### OdinShip
 
