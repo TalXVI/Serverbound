@@ -40,7 +40,7 @@ namespace Serverbound
 
                 foreach (var kind in new[] { HarmonyPatchType.Prefix, HarmonyPatchType.Postfix, HarmonyPatchType.Transpiler, HarmonyPatchType.Finalizer })
                 {
-                    MethodInfo? hook = AccessTools.DeclaredMethod(type, kind.ToString());
+                    MethodInfo? hook = type.GetMethod(kind.ToString(), AccessTools.allDeclared);
                     if (hook != null) hooks.Add((method, hook, kind));
                 }
             }

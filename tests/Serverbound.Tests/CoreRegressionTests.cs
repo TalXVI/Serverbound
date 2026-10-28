@@ -7,6 +7,7 @@ using System.Runtime.Serialization;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
+using HarmonyLog = HarmonyLib.Tools.Logger;
 using Serverbound;
 using Serverbound.FeatureModel;
 using Serverbound.Features;
@@ -36,6 +37,30 @@ internal static class CoreRegressionTests
                 using (var scene = new Scene()) action(scene);
             });
         }
+
+        Case("Core installation discovers optional hooks without warnings", scene =>
+        {
+            var warnings = new List<string>();
+            HarmonyLog.LogChannel channels = HarmonyLog.ChannelFilter;
+            EventHandler<HarmonyLog.LogEventArgs> capture = (_, message) =>
+            {
+                if (message.LogChannel == HarmonyLog.LogChannel.Warn) warnings.Add(message.Message);
+            };
+
+            HarmonyLog.MessageReceived += capture;
+            HarmonyLog.ChannelFilter |= HarmonyLog.LogChannel.Warn;
+
+            try
+            {
+                Check(PatchCore(scene.Plugin), "supported original Core did not install");
+                Check(warnings.Count == 0, "Core installation emitted warnings:\n" + string.Join("\n", warnings));
+            }
+            finally
+            {
+                HarmonyLog.MessageReceived -= capture;
+                HarmonyLog.ChannelFilter = channels;
+            }
+        });
 
         Case("batch installation verifies Core after StartupAccelerator flushes", scene =>
         {
