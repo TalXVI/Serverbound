@@ -23,6 +23,7 @@ internal static class CoreRegressionTests
     private static readonly List<int> visits = new List<int>();
     private static readonly HashSet<int> generationSuccesses = new HashSet<int>();
     private static readonly List<Vector2s> sectorQueries = new List<Vector2s>();
+    private static readonly List<ZDO> objectCreations = new List<ZDO>();
     private static List<ZDO> createdNear = new List<ZDO>();
     private static List<ZDO> createdDistant = new List<ZDO>();
     private static List<ZDO> removedNear = new List<ZDO>();
@@ -354,6 +355,187 @@ internal static class CoreRegressionTests
             sectorQueries.Clear();
         });
 
+        Case("object creation proceeds only in ready player areas", scene =>
+        {
+            ZoneSystem zones = Fake<ZoneSystem>();
+            zones.m_zoneSize = 64f;
+            zones.m_simulationDistance = new SimulationDistance(1, 1, true);
+            Set(typeof(ZoneSystem), "s_instance", zones);
+
+            var loaded = (System.Collections.IDictionary)Activator.CreateInstance(AccessTools.Field(typeof(ZoneSystem), "m_zones").FieldType)!;
+            Set(zones, "m_zones", loaded);
+            Set(zones, "m_loadingObjectsInZones", new Dictionary<Vector2s, List<ZDO>>());
+            Set(ZNetScene.s_instance, "m_tempCurrentObjects2", new List<ZDO>());
+            Set(ZNet.instance, "m_simulationDistance", zones.m_simulationDistance);
+
+            Vector2s first = new Vector2s(0, 0);
+            Vector2s second = new Vector2s(10, 0);
+            Vector2s firstCorner = new Vector2s(1, 1);
+            Vector2s secondCorner = new Vector2s(11, 1);
+            AddLoadedZones(loaded, first, 1, classic: true);
+            AddLoadedZones(loaded, second, 1, classic: true);
+            loaded.Remove(secondCorner);
+
+            ZNetPeer firstPeer = Peer(1, first);
+            ZNetPeer sameCenter = Peer(2, first);
+            sameCenter.m_refPos += new Vector3(1f, 0f, 1f);
+            ZNetPeer secondPeer = Peer(3, second);
+            ZNetPeer unready = Peer(0, new Vector2s(20, 0));
+            Set(ZNet.instance, "m_peers", new List<ZNetPeer> { firstPeer, secondPeer, sameCenter, unready });
+
+            ZDO terrain = PositionedObject(scene, 40, new Vector2s(1, 0), ZDO.ObjectType.Terrain);
+            ZDO solid = PositionedObject(scene, 41, first, ZDO.ObjectType.Solid);
+            ZDO loadingTerrain = PositionedObject(scene, 42, new Vector2s(0, 1), ZDO.ObjectType.Terrain);
+            ZDO blocked = PositionedObject(scene, 43, new Vector2s(0, 1), ZDO.ObjectType.Default);
+            ZDO secondTerrain = PositionedObject(scene, 44, second, ZDO.ObjectType.Terrain);
+            ZDO missingZone = PositionedObject(scene, 45, secondCorner, ZDO.ObjectType.Default);
+            zones.SetLoadingInZone(loadingTerrain);
+
+            var candidates = new List<ZDO> { solid, secondTerrain, blocked, missingZone, terrain };
+            MethodInfo create = AccessTools.Method(typeof(ZNetScene), "CreateObjectsSorted");
+            scene.Fixture.Patch(AccessTools.Method(typeof(ZNetScene), "CreateObject"), prefix: Hook(nameof(CaptureObjectCreation)));
+            Check(PatchCore(scene.Plugin), "supported original Core did not install");
+
+            try
+            {
+                Check(!zones.IsActiveAreaLoaded(), "the second player's incomplete area did not block the global readiness check");
+                objectCreations.Clear();
+                object[] firstPass = { candidates, 100, 0 };
+                create.Invoke(ZNetScene.s_instance, firstPass);
+                Check(objectCreations.SequenceEqual(new[] { terrain, solid }) && (int)firstPass[2] == 2,
+                    "an incomplete player area blocked a loaded area, bypassed a terrain dependency, or changed type order");
+                Check(!blocked.Created && !secondTerrain.Created && !missingZone.Created,
+                    "an object was created before its area or higher-priority loading object was ready");
+
+                AddLoadedZone(loaded, secondCorner);
+                Check(zones.IsActiveAreaLoaded(), "an unready peer blocked fully loaded player areas");
+                objectCreations.Clear();
+                object[] secondPass = { candidates, 100, 0 };
+                create.Invoke(ZNetScene.s_instance, secondPass);
+                Check(objectCreations.SequenceEqual(new[] { secondTerrain, missingZone }) && (int)secondPass[2] == 2,
+                    "the second player area did not start creating objects in type order when it became ready");
+                Check(!blocked.Created, "a lower-priority object bypassed a loading terrain object");
+
+                ZDO firstAgain = PositionedObject(scene, 46, first, ZDO.ObjectType.Solid);
+                ZDO secondAgain = PositionedObject(scene, 47, second, ZDO.ObjectType.Default);
+                candidates.Add(firstAgain);
+                candidates.Add(secondAgain);
+                loaded.Remove(firstCorner);
+                Check(!zones.IsActiveAreaLoaded(), "the first player's area did not become incomplete");
+                objectCreations.Clear();
+                object[] thirdPass = { candidates, 100, 0 };
+                create.Invoke(ZNetScene.s_instance, thirdPass);
+                Check(objectCreations.SequenceEqual(new[] { secondAgain }) && (int)thirdPass[2] == 1 && !firstAgain.Created,
+                    "area readiness was reused across passes after a zone disappeared");
+
+                AddLoadedZone(loaded, firstCorner);
+                zones.UnsetLoadingInZone(loadingTerrain);
+                objectCreations.Clear();
+                object[] fourthPass = { candidates, 100, 0 };
+                create.Invoke(ZNetScene.s_instance, fourthPass);
+                Check(objectCreations.SequenceEqual(new[] { firstAgain, blocked }) && (int)fourthPass[2] == 2,
+                    "objects remained blocked after their area and terrain dependency became ready");
+
+                loaded.Clear();
+                zones.m_simulationDistance = new SimulationDistance(2, 1, false);
+                Set(ZNet.instance, "m_simulationDistance", zones.m_simulationDistance);
+                AddLoadedZones(loaded, first, 2, classic: false);
+                AddLoadedZones(loaded, second, 2, classic: false);
+                Check(!loaded.Contains(new Vector2s(2, 2)) && zones.IsActiveAreaLoaded(),
+                    "the non-classic fixture did not exclude an unloaded corner outside its radius");
+
+                ZDO radial = PositionedObject(scene, 48, first, ZDO.ObjectType.Default);
+                candidates.Add(radial);
+                objectCreations.Clear();
+                object[] radialPass = { candidates, 100, 0 };
+                create.Invoke(ZNetScene.s_instance, radialPass);
+                Check(objectCreations.SequenceEqual(new[] { radial }) && (int)radialPass[2] == 1,
+                    "an unloaded corner outside the non-classic simulation radius blocked creation");
+            }
+            finally
+            {
+                objectCreations.Clear();
+            }
+        });
+
+        Case("overlapping ready areas exclude incomplete backlogs from the creation budget", scene =>
+        {
+            ZoneSystem zones = Fake<ZoneSystem>();
+            zones.m_zoneSize = 64f;
+            zones.m_simulationDistance = new SimulationDistance(1, 1, true);
+            Set(typeof(ZoneSystem), "s_instance", zones);
+
+            var loaded = (System.Collections.IDictionary)Activator.CreateInstance(AccessTools.Field(typeof(ZoneSystem), "m_zones").FieldType)!;
+            Set(zones, "m_zones", loaded);
+            Set(zones, "m_loadingObjectsInZones", new Dictionary<Vector2s, List<ZDO>>());
+            Set(ZNetScene.s_instance, "m_tempCurrentObjects2", new List<ZDO>());
+            Set(ZNet.instance, "m_simulationDistance", zones.m_simulationDistance);
+
+            Vector2s first = new Vector2s(0, 0);
+            Vector2s second = new Vector2s(2, 0);
+            Vector2s overlap = new Vector2s(1, 0);
+            Vector2s destination = new Vector2s(8, 0);
+            AddLoadedZones(loaded, first, 1, classic: true);
+            AddLoadedZones(loaded, destination, 1, classic: true);
+
+            for (int y = -1; y <= 1; y++)
+            {
+                for (int x = 1; x <= 3; x++)
+                {
+                    Vector2s zone = new Vector2s(x, y);
+                    if (!loaded.Contains(zone)) AddLoadedZone(loaded, zone);
+                }
+            }
+            loaded.Remove(new Vector2s(3, 1));
+
+            ZNetPeer secondPeer = Peer(1, second);
+            ZNetPeer firstPeer = Peer(2, first);
+            Set(ZNet.instance, "m_peers", new List<ZNetPeer> { secondPeer, firstPeer });
+
+            var backlog = new List<ZDO>();
+            for (uint id = 100; id < 299; id++) backlog.Add(PositionedObject(scene, id, second, ZDO.ObjectType.Terrain));
+
+            ZDO overlapping = PositionedObject(scene, 299, overlap, ZDO.ObjectType.Solid);
+            ZDO home = PositionedObject(scene, 300, first, ZDO.ObjectType.Default);
+            var candidates = new List<ZDO>(backlog) { overlapping, home };
+            MethodInfo create = AccessTools.Method(typeof(ZNetScene), "CreateObjectsSorted");
+            scene.Fixture.Patch(AccessTools.Method(typeof(ZNetScene), "CreateObject"), prefix: Hook(nameof(CaptureObjectCreation)));
+            Check(PatchCore(scene.Plugin), "supported original Core did not install");
+
+            try
+            {
+                Check(!zones.IsActiveAreaLoaded(), "the first peer in the list did not have an incomplete area");
+                objectCreations.Clear();
+                object[] firstPass = { candidates, 1, 0 };
+                create.Invoke(ZNetScene.s_instance, firstPass);
+                Check(objectCreations.SequenceEqual(new[] { overlapping }) && (int)firstPass[2] == 1 && !home.Created,
+                    "an incomplete area blocked the overlapping ready area or increased its creation budget");
+                Check(backlog.All(zdo => !zdo.Created), "objects belonging only to the incomplete area were created");
+
+                firstPeer.m_refPos = ZoneSystem.GetZonePos(destination);
+                ZDO oldOverlap = PositionedObject(scene, 301, overlap, ZDO.ObjectType.Solid);
+                ZDO newArea = PositionedObject(scene, 302, destination, ZDO.ObjectType.Default);
+                candidates = new List<ZDO>(backlog) { oldOverlap, newArea };
+                objectCreations.Clear();
+                object[] secondPass = { candidates, 1, 0 };
+                create.Invoke(ZNetScene.s_instance, secondPass);
+                Check(objectCreations.SequenceEqual(new[] { newArea }) && (int)secondPass[2] == 1 && !oldOverlap.Created,
+                    "a moved peer left its previous overlap ready or failed to activate its new area");
+            }
+            finally
+            {
+                objectCreations.Clear();
+            }
+        });
+
+        Case("Core installation rejects a changed creation readiness predicate", scene =>
+        {
+            MethodInfo target = AccessTools.Method(typeof(ZNetScene), "CreateObjectsSorted");
+            scene.Fixture.Patch(target, transpiler: new HarmonyMethod(typeof(CoreRegressionTests), nameof(ChangeCreated)) { priority = Priority.First });
+            Check(!PatchCore(scene.Plugin) && !HasCoreHooks(), "Core retained authority without the area readiness filter");
+            Check(Harmony.GetPatchInfo(target)!.Transpilers.Any(p => p.owner == scene.Fixture.Id), "Core rejection removed the foreign rewrite");
+        });
+
         Case("Core installation rejects a missing mandatory rewrite", scene =>
         {
             scene.Fixture.Patch(AccessTools.Method(typeof(Pickable), "RPC_Pick"), transpiler: new HarmonyMethod(typeof(CoreRegressionTests), nameof(ChangeLocalPlayer)) { priority = Priority.First });
@@ -404,6 +586,42 @@ internal static class CoreRegressionTests
     }
 
     private static void RecordSectorQuery(Vector2s __0) => sectorQueries.Add(__0);
+
+    private static bool CaptureObjectCreation(ZDO __0, ref GameObject __result)
+    {
+        objectCreations.Add(__0);
+        __0.Created = true;
+        __result = Fake<GameObject>();
+        return false;
+    }
+
+    private static ZDO PositionedObject(Scene scene, uint id, Vector2s zone, ZDO.ObjectType type)
+    {
+        ZDO zdo = scene.Zdo(id, 100);
+        Set(zdo, "m_position", ZoneSystem.GetZonePos(zone));
+        zdo.Type = type;
+        return zdo;
+    }
+
+    private static void AddLoadedZones(System.Collections.IDictionary loaded, Vector2s center, int radius, bool classic)
+    {
+        for (int y = -radius; y <= radius; y++)
+        {
+            for (int x = -radius; x <= radius; x++)
+            {
+                if (classic || x * x + y * y < (radius + 0.5f) * (radius + 0.5f))
+                {
+                    AddLoadedZone(loaded, new Vector2s(center.x + x, center.y + y));
+                }
+            }
+        }
+    }
+
+    private static void AddLoadedZone(System.Collections.IDictionary loaded, Vector2s zone)
+    {
+        Type zoneData = AccessTools.Inner(typeof(ZoneSystem), "ZoneData");
+        loaded.Add(zone, Activator.CreateInstance(zoneData, nonPublic: true));
+    }
 
     private static bool CaptureCreatedObjects(List<ZDO> __0, List<ZDO> __1)
     {
@@ -456,6 +674,16 @@ internal static class CoreRegressionTests
     }
 
     private static Player? NoPlayer() => null;
+
+    private static IEnumerable<CodeInstruction> ChangeCreated(IEnumerable<CodeInstruction> input)
+    {
+        MethodInfo getter = AccessTools.PropertyGetter(typeof(ZDO), nameof(ZDO.Created));
+        return input.Select(code => code.Calls(getter)
+            ? new CodeInstruction(code) { opcode = OpCodes.Call, operand = AccessTools.Method(typeof(CoreRegressionTests), nameof(WasCreated)) }
+            : code);
+    }
+
+    private static bool WasCreated(ZDO zdo) => zdo.Created;
     private static HarmonyMethod Hook(string name) => new HarmonyMethod(typeof(CoreRegressionTests), name);
     private static void Check(bool value, string message) { if (!value) throw new Exception(message); }
     private static void Set(object target, string field, object? value) => AccessTools.Field(target is Type t ? t : target.GetType(), field).SetValue(target is Type ? null : target, value);

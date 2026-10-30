@@ -213,31 +213,96 @@ namespace Serverbound.Features
 		[HarmonyPatch(typeof(ZNetScene), "CreateObjectsSorted")]
 		public static class ZNetScene_CreateObjectsSorted_Patch
 		/*
-			CreateObjectsSorted instantiates the objects that are not created yet, closest to
-			ZNet.GetReferencePosition() first, a limited number per frame. On a dedicated server that
-			position is outside the world, so the order was effectively arbitrary: after a portal or
-			on entering a new area, the objects next to a player could be among the last the server
-			creates and starts simulating. Sort by distance to the nearest peer instead (the idea of
-			upstream PR #100 by jsza). This orders server-side creation only; clients sort their own.
+			Create objects in fully loaded player areas independently. Keep the complete area's terrain
+			prerequisite and the game's live per-object type check for asynchronous dungeon loading.
+			Filter before sorting and counting candidates, so an incomplete area's backlog cannot
+			increase the creation quota. Sort by distance to the nearest peer instead of the server's
+			reference position, following the idea of upstream PR #100 by jsza.
 		*/
 		{
 			private static readonly List<Vector3> s_peerPositions = new List<Vector3>();
 			private static int s_peerPositionsFrame = -1;
-			private static readonly MethodInfo distanceSqr = AccessTools.Method(typeof(Utils), nameof(Utils.DistanceSqr), new[] { typeof(Vector3), typeof(Vector3) });
-			private static readonly MethodInfo nearest = AccessTools.Method(typeof(ZNetScene_CreateObjectsSorted_Patch), nameof(NearestPeerDistanceSqr));
+			private static readonly HashSet<Vector2s> s_checkedCenters = new HashSet<Vector2s>();
+			private static readonly HashSet<Vector2s> s_readySectors = new HashSet<Vector2s>();
+			private static readonly List<Vector2s> s_area = new List<Vector2s>();
+			private static MethodInfo distanceSqr, nearest, activeArea, prepareAreas, created, skipPending, zoneInstance, position, add, moveNext;
+			private static FieldInfo sortValue, pendingObjects;
+
+			static ZNetScene_CreateObjectsSorted_Patch() { Prepare(); }
+
+			static void Prepare()
+			{
+				if (distanceSqr != null) return;
+
+				distanceSqr = Method(typeof(Utils), nameof(Utils.DistanceSqr), typeof(Vector3), typeof(Vector3));
+				nearest = Method(typeof(ZNetScene_CreateObjectsSorted_Patch), nameof(NearestPeerDistanceSqr), typeof(Vector3), typeof(Vector3));
+				activeArea = Method(typeof(ZoneSystem), nameof(ZoneSystem.IsActiveAreaLoaded));
+				prepareAreas = Method(typeof(ZNetScene_CreateObjectsSorted_Patch), nameof(PrepareReadyAreas), typeof(ZoneSystem));
+				created = AccessTools.PropertyGetter(typeof(ZDO), nameof(ZDO.Created)) ?? throw new MissingMemberException(typeof(ZDO).FullName, nameof(ZDO.Created));
+				skipPending = Method(typeof(ZNetScene_CreateObjectsSorted_Patch), nameof(CreatedOrAreaPending), typeof(ZDO));
+				zoneInstance = AccessTools.PropertyGetter(typeof(ZoneSystem), nameof(ZoneSystem.instance)) ?? throw new MissingMemberException(typeof(ZoneSystem).FullName, nameof(ZoneSystem.instance));
+				position = Method(typeof(ZDO), nameof(ZDO.GetPosition));
+				add = Method(typeof(List<ZDO>), nameof(List<ZDO>.Add), typeof(ZDO));
+				moveNext = Method(typeof(List<ZDO>.Enumerator), nameof(List<ZDO>.Enumerator.MoveNext));
+				sortValue = AccessTools.Field(typeof(ZDO), nameof(ZDO.m_tempSortValue)) ?? throw new MissingFieldException(typeof(ZDO).FullName, nameof(ZDO.m_tempSortValue));
+				pendingObjects = AccessTools.Field(typeof(ZNetScene), nameof(ZNetScene.m_tempCurrentObjects2)) ?? throw new MissingFieldException(typeof(ZNetScene).FullName, nameof(ZNetScene.m_tempCurrentObjects2));
+			}
+
+			private static MethodInfo Method(Type type, string name, params Type[] arguments) =>
+				AccessTools.DeclaredMethod(type, name, arguments) ?? throw new MissingMethodException(type.FullName, name);
 
 			static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
 			{
-				List<CodeInstruction> codes = instructions.ToList();
-				int found = codes.Count(code => code.Calls(distanceSqr));
-				CoreVerification.Record(__originalMethod, found == 1);
-				if (found != 1)
+				List<CodeInstruction> original = instructions.ToList();
+				List<CodeInstruction> code = original.Select(i => new CodeInstruction(i)).ToList();
+				int areaSite = Site(code, i => code[i].Calls(activeArea));
+				int createdSite = Site(code, i => code[i].Calls(created));
+				int distanceSite = Site(code, i => code[i].Calls(distanceSqr));
+				int addSite = Site(code, i => code[i].Calls(add));
+				bool matched = Locals(__originalMethod, 6, (0, typeof(Vector3)), (2, typeof(List<ZDO>.Enumerator)), (3, typeof(ZDO)))
+					&& Shape(code, areaSite - 1, Calls(zoneInstance), Calls(activeArea), Is(OpCodes.Brtrue, OpCodes.Brtrue_S), Is(OpCodes.Ret), Ldarg(0))
+					&& Shape(code, createdSite - 1, IsLoad(3), Calls(created), Is(OpCodes.Brtrue, OpCodes.Brtrue_S),
+						IsLoad(3), IsLoad(0), IsLoad(3), Calls(position), Calls(distanceSqr), i => i.StoresField(sortValue))
+					&& Shape(code, addSite - 3, Ldarg(0), Loads(pendingObjects), IsLoad(3), Calls(add), IsAddress(2), Calls(moveNext))
+					&& distanceSite == createdSite + 6
+					&& Targets(code[areaSite + 1], code[areaSite + 3])
+					&& Targets(code[createdSite + 1], code[addSite + 1]);
+				CoreVerification.Record(__originalMethod, matched);
+				if (!matched)
 				{
-					Plugin.logger.LogWarning($"{__originalMethod.DeclaringType.Name}.{__originalMethod.Name}: found {found} sort distance call(s), expected 1. The game changed this method; it was left unchanged and the patch needs reviewing.");
-					return codes;
+					Plugin.logger.LogWarning($"{__originalMethod.DeclaringType.Name}.{__originalMethod.Name}: readiness or sort anchors changed; left unchanged. Core requires review.");
+					return original;
 				}
-				return codes.Select(code => code.Calls(distanceSqr) ? new CodeInstruction(code) { operand = nearest } : code).ToList();
+
+				code[areaSite].opcode = OpCodes.Call;
+				code[areaSite].operand = prepareAreas;
+				code[createdSite].opcode = OpCodes.Call;
+				code[createdSite].operand = skipPending;
+				code[distanceSite].operand = nearest;
+				return code;
 			}
+
+			private static bool PrepareReadyAreas(ZoneSystem zones)
+			{
+				if (CoreVerification.Blocked) return zones.IsActiveAreaLoaded();
+
+				s_checkedCenters.Clear();
+				s_readySectors.Clear();
+				foreach (ZNetPeer peer in ZNet.instance.GetPeers())
+				{
+					if (!peer.IsReady()) continue;
+
+					Vector2s center = ZoneSystem.GetZone(peer.GetRefPos());
+					if (s_checkedCenters.Add(center) && ZoneSystem_IsActiveAreaLoaded_Patch.IsAreaLoaded(zones, center, s_area))
+					{
+						s_readySectors.UnionWith(s_area);
+					}
+				}
+				return s_readySectors.Count != 0;
+			}
+
+			private static bool CreatedOrAreaPending(ZDO zdo) => zdo.Created
+				|| (!CoreVerification.Blocked && !s_readySectors.Contains(zdo.GetSector()));
 
 			// Same signature as the Utils.DistanceSqr call it replaces; the reference position is only a fallback.
 			public static float NearestPeerDistanceSqr(Vector3 referencePosition, Vector3 position)
@@ -285,31 +350,35 @@ namespace Serverbound.Features
 			{
 				if (CoreVerification.Blocked) return true;
 
-				SimulationDistance distance = __instance.m_simulationDistance;
-				int near = distance.NearSimulationDistance;
 				foreach (ZNetPeer peer in ZNet.instance.GetPeers())
 				{
-					if (!peer.IsReady())
+					if (peer.IsReady() && !IsAreaLoaded(__instance, ZoneSystem.GetZone(peer.GetRefPos())))
 					{
-						continue;
-					}
-					Vector2s zone = ZoneSystem.GetZone(peer.GetRefPos());
-					for (int i = zone.y - near; i <= zone.y + near; i++)
-					{
-						for (int j = zone.x - near; j <= zone.x + near; j++)
-						{
-							Vector2s candidate = new Vector2s(j, i);
-							if ((distance.IsClassic || __instance.ZonesWithinRadius(zone, candidate, near))
-								&& !__instance.m_zones.ContainsKey(candidate))
-							{
-								__result = false;
-								return false;
-							}
-						}
+						__result = false;
+						return false;
 					}
 				}
 				__result = true;
 				return false;
+			}
+
+			internal static bool IsAreaLoaded(ZoneSystem zones, Vector2s center, List<Vector2s> sectors = null)
+			{
+				sectors?.Clear();
+				SimulationDistance distance = zones.m_simulationDistance;
+				int near = distance.NearSimulationDistance;
+				for (int y = center.y - near; y <= center.y + near; y++)
+				{
+					for (int x = center.x - near; x <= center.x + near; x++)
+					{
+						Vector2s candidate = new Vector2s(x, y);
+						if (!distance.IsClassic && !zones.ZonesWithinRadius(center, candidate, near)) continue;
+						if (!zones.m_zones.ContainsKey(candidate)) return false;
+
+						sectors?.Add(candidate);
+					}
+				}
+				return true;
 			}
 		}
 

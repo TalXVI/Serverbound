@@ -92,7 +92,7 @@ namespace Serverbound.Compatibility
 				try
 				{
 				TakeOver("CreateObjectsSorted", Configuration.compatVcpSpawnQueue, "spawn queue",
-					"new objects are created in order of distance from the world origin, not from the nearest player.");
+						"new objects use distance from the world origin and wait for every player's area to load.");
 				TakeOver("RemoveObjects", Configuration.compatVcpUnload, "zone-diff unload",
 					"objects around players far from the world origin can be destroyed and created again on every pass.");
 					foreach (var hook in removed) SimulationPatch.RememberRemoved(hook);
