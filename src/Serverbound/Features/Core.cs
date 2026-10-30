@@ -154,6 +154,7 @@ namespace Serverbound.Features
 		*/
 		{
 			private static readonly HashSet<ZDO> s_seen = new HashSet<ZDO>();
+			private static readonly HashSet<Vector2s> s_queriedZones = new HashSet<Vector2s>();
 
 			private static bool Prefix(ZNetScene __instance)
 			{
@@ -164,6 +165,7 @@ namespace Serverbound.Features
 				List<ZDO> currentDistantObjects = __instance.m_tempCurrentDistantObjects;
 				currentObjects.Clear();
 				currentDistantObjects.Clear();
+				s_queriedZones.Clear();
 
 				// 1.0: one SimulationDistance replaces m_activeArea/m_activeDistantArea. Vanilla reads
 				// the synced value from ZNet here, not ZoneSystem's copy.
@@ -177,8 +179,12 @@ namespace Serverbound.Features
 					{
 						continue;
 					}
+
 					Vector2s zone = ZoneSystem.GetZone(znetPeer.GetRefPos());
-					ZDOMan.instance.FindSectorObjects(zone, distance, currentObjects, currentDistantObjects);
+					if (s_queriedZones.Add(zone))
+					{
+						ZDOMan.instance.FindSectorObjects(zone, distance, currentObjects, currentDistantObjects);
+					}
 				}
 
 				RemoveDuplicates(currentObjects);

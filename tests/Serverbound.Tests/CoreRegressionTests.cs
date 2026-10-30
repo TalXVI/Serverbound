@@ -21,6 +21,12 @@ internal static class CoreRegressionTests
 {
     private const string Owner = "org.serverbound.valheim.Core";
     private static readonly List<int> visits = new List<int>();
+    private static readonly HashSet<int> generationSuccesses = new HashSet<int>();
+    private static readonly List<Vector2s> sectorQueries = new List<Vector2s>();
+    private static List<ZDO> createdNear = new List<ZDO>();
+    private static List<ZDO> createdDistant = new List<ZDO>();
+    private static List<ZDO> removedNear = new List<ZDO>();
+    private static List<ZDO> removedDistant = new List<ZDO>();
     private static Ship? ship;
     private static int identifier;
 
@@ -221,6 +227,133 @@ internal static class CoreRegressionTests
             }
         });
 
+        Case("fair zone generation handles idle peers and changing peer lists", scene =>
+        {
+            ZoneSystem zones = Fake<ZoneSystem>();
+            MethodInfo spawn = AccessTools.Method(typeof(Core.ZoneSystem_Update_Patch), "SpawnZones");
+            FieldInfo cursor = AccessTools.Field(typeof(Core.ZoneSystem_Update_Patch), "s_nextPeer");
+            int previousCursor = (int)cursor.GetValue(null);
+            int previousBudget = Configuration.maxZonesPerTick.Value;
+
+            try
+            {
+                scene.Fixture.Patch(AccessTools.Method(typeof(ZoneSystem), "CreateLocalZones"), prefix: Hook(nameof(GenerateSelected)));
+                scene.Fixture.Patch(AccessTools.Method(typeof(ZoneSystem), "CreateGhostZones", new[] { typeof(Vector3) }),
+                    prefix: Hook(nameof(GenerateSelected)));
+
+                visits.Clear();
+                generationSuccesses.Clear();
+                foreach (int position in new[] { 0, 2, 3, 4 }) generationSuccesses.Add(position);
+
+                Configuration.maxZonesPerTick.Value = 2;
+                cursor.SetValue(null, 0);
+
+                var peers = new List<ZNetPeer>
+                {
+                    PeerAt(1, 0), PeerAt(2, 1), PeerAt(0, 9), PeerAt(3, 2), PeerAt(4, 3)
+                };
+                int generated = (int)spawn.Invoke(null, new object[] { zones, peers, false });
+                Check(generated == 2 && visits.SequenceEqual(new[] { 0, 1, 2 }),
+                    "budgeted local generation did not visit ready peers in order through an idle and unready peer");
+
+                peers.RemoveAt(0);
+                visits.Clear();
+                generated = (int)spawn.Invoke(null, new object[] { zones, peers, false });
+                Check(generated == 2 && visits.SequenceEqual(new[] { 1, 2, 3 }),
+                    "shrinking the peer list did not wrap the next pass across the shorter list");
+
+                peers.Clear();
+                visits.Clear();
+                generated = (int)spawn.Invoke(null, new object[] { zones, peers, false });
+                Check(generated == 0 && visits.Count == 0,
+                    "an empty peer list performed work");
+
+                peers.AddRange(new[] { PeerAt(5, 4), PeerAt(0, 9), PeerAt(1, 0), PeerAt(2, 1) });
+                visits.Clear();
+                generated = (int)spawn.Invoke(null, new object[] { zones, peers, false });
+                Check(generated == 2 && visits.SequenceEqual(new[] { 4, 0 }),
+                    "rejoining peers were not scheduled from the retained cursor in ready-peer order");
+
+                Configuration.maxZonesPerTick.Value = 0;
+                visits.Clear();
+                generated = (int)spawn.Invoke(null, new object[] { zones, peers, true });
+                Check(generated == 2 && visits.SequenceEqual(new[] { 1, 4, 0 }),
+                    "unlimited ghost generation repeated a ready peer or changed encounter order");
+            }
+            finally
+            {
+                Configuration.maxZonesPerTick.Value = previousBudget;
+                cursor.SetValue(null, previousCursor);
+                visits.Clear();
+                generationSuccesses.Clear();
+            }
+        });
+
+        Case("sector queries deduplicate centers and reset between object passes", scene =>
+        {
+            ZoneSystem zones = Fake<ZoneSystem>();
+            zones.m_zoneSize = 64f;
+            Set(typeof(ZoneSystem), "s_instance", zones);
+
+            Vector2s firstCenter = ZoneSystem.GetZone(new Vector3(0f, 0f, 0f));
+            Vector2s overlapCenter = new Vector2s(firstCenter.x + 1, firstCenter.y);
+            Vector2s nextCenter = new Vector2s(firstCenter.x + 5, firstCenter.y);
+            Check(ZoneSystem.GetZone(ZoneSystem.GetZonePos(firstCenter)).Equals(firstCenter)
+                && ZoneSystem.GetZone(ZoneSystem.GetZonePos(overlapCenter)).Equals(overlapCenter)
+                && ZoneSystem.GetZone(ZoneSystem.GetZonePos(nextCenter)).Equals(nextCenter), "zone fixture positions did not round-trip");
+
+            ZNetScene target = ZNetScene.s_instance;
+            Set(target, "m_tempCurrentObjects", new List<ZDO>());
+            Set(target, "m_tempCurrentDistantObjects", new List<ZDO>());
+            Set(scene.Manager, "m_visitedSectorIndices", new HashSet<ZoneSystem.SectorIndex>());
+
+            scene.Fixture.Patch(AccessTools.Method(typeof(ZDOMan), "FindSectorObjects", new[]
+            {
+                typeof(Vector2s), typeof(SimulationDistance), typeof(List<ZDO>), typeof(List<ZDO>)
+            }), prefix: Hook(nameof(RecordSectorQuery)));
+            scene.Fixture.Patch(AccessTools.Method(typeof(ZNetScene), "CreateObjects", new[] { typeof(List<ZDO>), typeof(List<ZDO>) }),
+                prefix: Hook(nameof(CaptureCreatedObjects)));
+            scene.Fixture.Patch(AccessTools.Method(typeof(ZNetScene), "RemoveObjects", new[] { typeof(List<ZDO>), typeof(List<ZDO>) }),
+                prefix: Hook(nameof(CaptureRemovedObjects)));
+            Check(PatchCore(scene.Plugin), "supported original Core did not install");
+
+            ZDO centerObject = SectorObject(scene, 10, firstCenter);
+            ZDO overlapFirst = SectorObject(scene, 11, overlapCenter);
+            ZDO overlapSecond = SectorObject(scene, 12, overlapCenter);
+            ZDO secondOnly = SectorObject(scene, 13, new Vector2s(overlapCenter.x + 1, overlapCenter.y));
+            ZDO distantObject = SectorObject(scene, 14, new Vector2s(firstCenter.x - 2, firstCenter.y), distant: true);
+            ZDO nextObject = SectorObject(scene, 15, nextCenter);
+
+            ZNetPeer first = Peer(1, firstCenter);
+            ZNetPeer sameCenter = Peer(2, firstCenter);
+            ZNetPeer overlap = Peer(3, overlapCenter);
+            ZNetPeer unready = Peer(0, nextCenter);
+            Set(ZNet.instance, "m_peers", new List<ZNetPeer> { first, sameCenter, overlap, unready });
+            Set(ZNet.instance, "m_simulationDistance", new SimulationDistance(1, 1, true));
+
+            MethodInfo createDestroy = AccessTools.Method(typeof(ZNetScene), "CreateDestroyObjects");
+            sectorQueries.Clear();
+            createDestroy.Invoke(target, null);
+
+            Check(sectorQueries.SequenceEqual(new[] { firstCenter, overlapCenter }), "first pass did not query each ready center exactly once in peer order");
+            Check(createdNear.SequenceEqual(new[] { centerObject, overlapFirst, overlapSecond, secondOnly }), "overlapping near sectors changed their first-seen object order");
+            Check(createdDistant.SequenceEqual(new[] { distantObject }), "distant objects changed during near-sector deduplication");
+            Check(removedNear.SequenceEqual(createdNear) && removedDistant.SequenceEqual(createdDistant), "create and removal passes received different object lists");
+
+            sameCenter.m_refPos = ZoneSystem.GetZonePos(nextCenter);
+            overlap.m_refPos = ZoneSystem.GetZonePos(firstCenter);
+            unready.m_refPos = ZoneSystem.GetZonePos(overlapCenter);
+            sectorQueries.Clear();
+            createDestroy.Invoke(target, null);
+
+            Check(sectorQueries.SequenceEqual(new[] { firstCenter, nextCenter }), "a subsequent pass reused stale center-query state or queried an unready peer");
+            Check(createdNear.SequenceEqual(new[] { centerObject, overlapFirst, overlapSecond, nextObject }), "the second pass returned stale or reordered near objects");
+            Check(createdDistant.SequenceEqual(new[] { distantObject }), "the second pass returned stale or reordered distant objects");
+            Check(removedNear.SequenceEqual(createdNear) && removedDistant.SequenceEqual(createdDistant), "the second removal pass differed from its creation pass");
+
+            sectorQueries.Clear();
+        });
+
         Case("Core installation rejects a missing mandatory rewrite", scene =>
         {
             scene.Fixture.Patch(AccessTools.Method(typeof(Pickable), "RPC_Pick"), transpiler: new HarmonyMethod(typeof(CoreRegressionTests), nameof(ChangeLocalPlayer)) { priority = Priority.First });
@@ -261,6 +394,50 @@ internal static class CoreRegressionTests
     private static bool SavesPortal(ZDOMan manager) => manager.GetSaveClonePerChunk().Any(c => c.Item1.Equals(ZoneSystem.ChunkPortal));
     private static bool Skip() => false;
     private static bool Generate(Vector3 __0, ref bool __result) { visits.Add((int)__0.x); __result = true; return false; }
+
+    private static bool GenerateSelected(Vector3 __0, ref bool __result)
+    {
+        int position = (int)__0.x;
+        visits.Add(position);
+        __result = generationSuccesses.Contains(position);
+        return false;
+    }
+
+    private static void RecordSectorQuery(Vector2s __0) => sectorQueries.Add(__0);
+
+    private static bool CaptureCreatedObjects(List<ZDO> __0, List<ZDO> __1)
+    {
+        createdNear = __0.ToList();
+        createdDistant = __1.ToList();
+        return false;
+    }
+
+    private static bool CaptureRemovedObjects(List<ZDO> __0, List<ZDO> __1)
+    {
+        removedNear = __0.ToList();
+        removedDistant = __1.ToList();
+        return false;
+    }
+
+    private static ZNetPeer Peer(long uid, Vector2s zone) => new ZNetPeer(new Socket(), false)
+    {
+        m_uid = uid,
+        m_refPos = ZoneSystem.GetZonePos(zone)
+    };
+
+    private static ZNetPeer PeerAt(long uid, int position) => new ZNetPeer(new Socket(), false)
+    {
+        m_uid = uid,
+        m_refPos = new Vector3(position, 0f, 0f)
+    };
+
+    private static ZDO SectorObject(Scene scene, uint id, Vector2s zone, bool distant = false)
+    {
+        ZDO zdo = scene.Zdo(id, 100);
+        zdo.Distant = distant;
+        scene.Manager.AddToSector(zdo, ZoneSystem.SectorToIndex(zone));
+        return zdo;
+    }
     private static Ship? ShipFor(Component _) => ship;
 
     private static IEnumerable<CodeInstruction> Components(IEnumerable<CodeInstruction> input) => input.Select(i =>
@@ -300,6 +477,7 @@ internal static class CoreRegressionTests
         private readonly ZNet net = ZNet.m_instance;
         private readonly ZDOMan manager = ZDOMan.s_instance;
         private readonly ZNetScene scene = ZNetScene.s_instance;
+        private readonly ZoneSystem zones = ZoneSystem.instance;
         private readonly Game game = Game.instance;
         private readonly ZRoutedRpc router = ZRoutedRpc.s_instance;
         private readonly bool server = ZNet.m_isServer;
@@ -382,9 +560,11 @@ internal static class CoreRegressionTests
             ZNet.m_isServer = server;
             ZDOMan.s_instance = manager;
             ZNetScene.s_instance = scene;
+            Set(typeof(ZoneSystem), "s_instance", zones);
             Set(typeof(Game), "<instance>k__BackingField", game);
             ZRoutedRpc.s_instance = router;
             Set(typeof(Plugin), "installed", false);
+            sectorQueries.Clear();
             ship = null;
         }
     }
