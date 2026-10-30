@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.21
+
+- Supports ValheimCommunityPatch 0.40.0 while retaining previously supported builds and its shield fixes.
+- Lets fully loaded player areas create objects while other players' areas load. Terrain and object-type loading requirements remain enforced.
+- Avoids repeated sector queries for players in the same zone and repeated skill reads when selecting a nearby actor.
+
 ## 0.1.20
 
 - Supports Valheim 1.0.21 Windows clients and Windows/Linux dedicated servers, and ValheimCommunityPatch 0.39.1. Earlier supported builds remain supported.

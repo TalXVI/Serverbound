@@ -225,27 +225,28 @@ namespace Serverbound.Features
 			private static readonly HashSet<Vector2s> s_checkedCenters = new HashSet<Vector2s>();
 			private static readonly HashSet<Vector2s> s_readySectors = new HashSet<Vector2s>();
 			private static readonly List<Vector2s> s_area = new List<Vector2s>();
-			private static MethodInfo distanceSqr, nearest, activeArea, prepareAreas, created, skipPending, zoneInstance, position, add, moveNext;
-			private static FieldInfo sortValue, pendingObjects;
+			private static MethodInfo distanceSqrMethod, nearestPeerMethod, activeAreaMethod, prepareAreasMethod, createdGetter,
+				skipPendingMethod, zoneInstanceGetter, positionMethod, addMethod, moveNextMethod;
+			private static FieldInfo sortValueField, pendingObjectsField;
 
 			static ZNetScene_CreateObjectsSorted_Patch() { Prepare(); }
 
 			static void Prepare()
 			{
-				if (distanceSqr != null) return;
+				if (distanceSqrMethod != null) return;
 
-				distanceSqr = Method(typeof(Utils), nameof(Utils.DistanceSqr), typeof(Vector3), typeof(Vector3));
-				nearest = Method(typeof(ZNetScene_CreateObjectsSorted_Patch), nameof(NearestPeerDistanceSqr), typeof(Vector3), typeof(Vector3));
-				activeArea = Method(typeof(ZoneSystem), nameof(ZoneSystem.IsActiveAreaLoaded));
-				prepareAreas = Method(typeof(ZNetScene_CreateObjectsSorted_Patch), nameof(PrepareReadyAreas), typeof(ZoneSystem));
-				created = AccessTools.PropertyGetter(typeof(ZDO), nameof(ZDO.Created)) ?? throw new MissingMemberException(typeof(ZDO).FullName, nameof(ZDO.Created));
-				skipPending = Method(typeof(ZNetScene_CreateObjectsSorted_Patch), nameof(CreatedOrAreaPending), typeof(ZDO));
-				zoneInstance = AccessTools.PropertyGetter(typeof(ZoneSystem), nameof(ZoneSystem.instance)) ?? throw new MissingMemberException(typeof(ZoneSystem).FullName, nameof(ZoneSystem.instance));
-				position = Method(typeof(ZDO), nameof(ZDO.GetPosition));
-				add = Method(typeof(List<ZDO>), nameof(List<ZDO>.Add), typeof(ZDO));
-				moveNext = Method(typeof(List<ZDO>.Enumerator), nameof(List<ZDO>.Enumerator.MoveNext));
-				sortValue = AccessTools.Field(typeof(ZDO), nameof(ZDO.m_tempSortValue)) ?? throw new MissingFieldException(typeof(ZDO).FullName, nameof(ZDO.m_tempSortValue));
-				pendingObjects = AccessTools.Field(typeof(ZNetScene), nameof(ZNetScene.m_tempCurrentObjects2)) ?? throw new MissingFieldException(typeof(ZNetScene).FullName, nameof(ZNetScene.m_tempCurrentObjects2));
+				distanceSqrMethod = Method(typeof(Utils), nameof(Utils.DistanceSqr), typeof(Vector3), typeof(Vector3));
+				nearestPeerMethod = Method(typeof(ZNetScene_CreateObjectsSorted_Patch), nameof(NearestPeerDistanceSqr), typeof(Vector3), typeof(Vector3));
+				activeAreaMethod = Method(typeof(ZoneSystem), nameof(ZoneSystem.IsActiveAreaLoaded));
+				prepareAreasMethod = Method(typeof(ZNetScene_CreateObjectsSorted_Patch), nameof(PrepareReadyAreas), typeof(ZoneSystem));
+				createdGetter = AccessTools.PropertyGetter(typeof(ZDO), nameof(ZDO.Created)) ?? throw new MissingMemberException(typeof(ZDO).FullName, nameof(ZDO.Created));
+				skipPendingMethod = Method(typeof(ZNetScene_CreateObjectsSorted_Patch), nameof(CreatedOrAreaPending), typeof(ZDO));
+				zoneInstanceGetter = AccessTools.PropertyGetter(typeof(ZoneSystem), nameof(ZoneSystem.instance)) ?? throw new MissingMemberException(typeof(ZoneSystem).FullName, nameof(ZoneSystem.instance));
+				positionMethod = Method(typeof(ZDO), nameof(ZDO.GetPosition));
+				addMethod = Method(typeof(List<ZDO>), nameof(List<ZDO>.Add), typeof(ZDO));
+				moveNextMethod = Method(typeof(List<ZDO>.Enumerator), nameof(List<ZDO>.Enumerator.MoveNext));
+				sortValueField = AccessTools.Field(typeof(ZDO), nameof(ZDO.m_tempSortValue)) ?? throw new MissingFieldException(typeof(ZDO).FullName, nameof(ZDO.m_tempSortValue));
+				pendingObjectsField = AccessTools.Field(typeof(ZNetScene), nameof(ZNetScene.m_tempCurrentObjects2)) ?? throw new MissingFieldException(typeof(ZNetScene).FullName, nameof(ZNetScene.m_tempCurrentObjects2));
 			}
 
 			private static MethodInfo Method(Type type, string name, params Type[] arguments) =>
@@ -255,18 +256,13 @@ namespace Serverbound.Features
 			{
 				List<CodeInstruction> original = instructions.ToList();
 				List<CodeInstruction> code = original.Select(i => new CodeInstruction(i)).ToList();
-				int areaSite = Site(code, i => code[i].Calls(activeArea));
-				int createdSite = Site(code, i => code[i].Calls(created));
-				int distanceSite = Site(code, i => code[i].Calls(distanceSqr));
-				int addSite = Site(code, i => code[i].Calls(add));
+				int areaSite = Site(code, i => code[i].Calls(activeAreaMethod));
+				int createdSite = Site(code, i => code[i].Calls(createdGetter));
+				int distanceSite = Site(code, i => code[i].Calls(distanceSqrMethod));
+				int addSite = Site(code, i => code[i].Calls(addMethod));
 				bool matched = Locals(__originalMethod, 6, (0, typeof(Vector3)), (2, typeof(List<ZDO>.Enumerator)), (3, typeof(ZDO)))
-					&& Shape(code, areaSite - 1, Calls(zoneInstance), Calls(activeArea), Is(OpCodes.Brtrue, OpCodes.Brtrue_S), Is(OpCodes.Ret), Ldarg(0))
-					&& Shape(code, createdSite - 1, IsLoad(3), Calls(created), Is(OpCodes.Brtrue, OpCodes.Brtrue_S),
-						IsLoad(3), IsLoad(0), IsLoad(3), Calls(position), Calls(distanceSqr), i => i.StoresField(sortValue))
-					&& Shape(code, addSite - 3, Ldarg(0), Loads(pendingObjects), IsLoad(3), Calls(add), IsAddress(2), Calls(moveNext))
-					&& distanceSite == createdSite + 6
-					&& Targets(code[areaSite + 1], code[areaSite + 3])
-					&& Targets(code[createdSite + 1], code[addSite + 1]);
+					&& MatchesReadiness(code, areaSite)
+					&& MatchesCandidates(code, createdSite, distanceSite, addSite);
 				CoreVerification.Record(__originalMethod, matched);
 				if (!matched)
 				{
@@ -275,12 +271,23 @@ namespace Serverbound.Features
 				}
 
 				code[areaSite].opcode = OpCodes.Call;
-				code[areaSite].operand = prepareAreas;
+				code[areaSite].operand = prepareAreasMethod;
 				code[createdSite].opcode = OpCodes.Call;
-				code[createdSite].operand = skipPending;
-				code[distanceSite].operand = nearest;
+				code[createdSite].operand = skipPendingMethod;
+				code[distanceSite].operand = nearestPeerMethod;
 				return code;
 			}
+
+			private static bool MatchesReadiness(List<CodeInstruction> code, int areaSite) =>
+				Shape(code, areaSite - 1, Calls(zoneInstanceGetter), Calls(activeAreaMethod), Is(OpCodes.Brtrue, OpCodes.Brtrue_S), Is(OpCodes.Ret), Ldarg(0))
+				&& Targets(code[areaSite + 1], code[areaSite + 3]);
+
+			private static bool MatchesCandidates(List<CodeInstruction> code, int createdSite, int distanceSite, int addSite) =>
+				Shape(code, createdSite - 1, IsLoad(3), Calls(createdGetter), Is(OpCodes.Brtrue, OpCodes.Brtrue_S),
+					IsLoad(3), IsLoad(0), IsLoad(3), Calls(positionMethod), Calls(distanceSqrMethod), i => i.StoresField(sortValueField))
+				&& Shape(code, addSite - 3, Ldarg(0), Loads(pendingObjectsField), IsLoad(3), Calls(addMethod), IsAddress(2), Calls(moveNextMethod))
+				&& distanceSite == createdSite + 6
+				&& Targets(code[createdSite + 1], code[addSite + 1]);
 
 			private static bool PrepareReadyAreas(ZoneSystem zones)
 			{
