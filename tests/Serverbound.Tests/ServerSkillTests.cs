@@ -24,6 +24,11 @@ internal static class ServerSkillTests
     private static readonly List<(long Peer, string Name, ZPackage Data)> grants = new List<(long, string, ZPackage)>();
     private static readonly List<(long Peer, bool Active)> statusReplies = new List<(long, bool)>();
     private static readonly List<Dictionary<GameObject, int>> miningDrops = new List<Dictionary<GameObject, int>>();
+    private static readonly int protocolKey = "Serverbound.skillProtocol".GetStableHashCode();
+    private static readonly int farmingLevelKey = "Serverbound.level.farming".GetStableHashCode();
+    private static readonly Dictionary<ZDO, int> protocolReads = new Dictionary<ZDO, int>();
+    private static readonly Dictionary<ZDO, int> farmingLevelReads = new Dictionary<ZDO, int>();
+
     private static Type skills = null!;
     private static Type config = null!;
     private static Assembly impact = null!;
@@ -33,6 +38,8 @@ internal static class ServerSkillTests
     private static Player? attacker;
     private static float health;
     private static int sequence;
+    private static bool countSkillReads;
+
     private static bool VendorOwnsTaming => impact.GetName().Version >= new System.Version(0, 25, 0, 0);
     private static Skills.SkillType Animal => (Skills.SkillType)AccessTools.Field(impact.GetType("ImpactfulSkills.patches.AnimalWhisper", true), "AnimalHandling").GetValue(null);
 
@@ -48,7 +55,8 @@ internal static class ServerSkillTests
                 new Harmony("Serverbound.Tests.SkillScene").UnpatchSelf();
                 foreach (IntPtr pointer in pointers) Marshal.FreeHGlobal(pointer);
                 pointers.Clear(); transforms.Clear(); positions.Clear(); characters.Clear(); ships.Clear();
-                spawned.Clear(); grants.Clear(); statusReplies.Clear(); miningDrops.Clear(); produced.Clear(); Player.m_localPlayer = null;
+                spawned.Clear(); grants.Clear(); statusReplies.Clear(); miningDrops.Clear(); produced.Clear();
+                protocolReads.Clear(); farmingLevelReads.Clear(); countSkillReads = false; Player.m_localPlayer = null;
                 AccessTools.Method(skills, "Reset").Invoke(null, null);
             }
         });
@@ -62,6 +70,20 @@ internal static class ServerSkillTests
             Reject(() => Factor(second, Animal));
             Set(zdo, "Serverbound.skillProtocol", 2);
             Reject(() => Factor(second, Skills.SkillType.Pickaxes));
+        });
+        Case("closest selection evaluates each candidate distance once and keeps owner ties", () =>
+        {
+            var candidates = new[] { Tuple.Create(4L, 4f), Tuple.Create(2L, 4f), Tuple.Create(3L, 9f), Tuple.Create(1L, 441f) };
+            int distanceReads = 0;
+            int ownerReads = 0;
+
+            var selected = Serverbound.Compatibility.SkillState.Closest(candidates,
+                candidate => { distanceReads++; return candidate.Item2; },
+                candidate => { ownerReads++; return candidate.Item1; }, 20);
+
+            Check(selected == candidates[1], "closest selector changed the owner-ID tie-break");
+            Check(distanceReads == candidates.Length, $"distance callback ran {distanceReads} times for {candidates.Length} candidates");
+            Check(ownerReads <= candidates.Length - 1, $"owner callback ran {ownerReads} times for in-range candidates");
         });
         Case("handshake replies only to a connected ready peer and reports disabled Core", () =>
         {
@@ -219,6 +241,113 @@ internal static class ServerSkillTests
                 Check(View(hive).GetZDO().GetBool("IS_BHIVE") == skilled, "hive flag");
             }
         });
+        Case("plant actor selection reads each valid nearby skill snapshot once", () =>
+        {
+            Player higherOwner = Levels(NewPlayer(171, 0), 70, 0, 0);
+            Player boundaryOwner = Levels(NewPlayer(170, 0), 70, 0, 0);
+            Player lowerLevel = Levels(NewPlayer(173, 0), 40, 0, 0);
+            Player invalidState = Levels(NewPlayer(174, 0), 90, 0, 0);
+            Set(View(invalidState).GetZDO(), "Serverbound.skillProtocol", 0);
+            Player distant = Levels(NewPlayer(175, 0), 100, 0, 0);
+
+            Position(higherOwner, new Vector3(1, 0, 0));
+            Position(boundaryOwner, new Vector3(30, 0, 0));
+            Position(lowerLevel, new Vector3(3, 0, 0));
+            Position(invalidState, new Vector3(4, 0, 0));
+            Position(distant, new Vector3(31, 0, 0));
+            AccessTools.Field(typeof(Player), "s_players").SetValue(null,
+                new List<Player> { higherOwner, boundaryOwner, lowerLevel, invalidState, distant });
+
+            Plant plant = Fake<Plant>();
+            Position(plant, Vector3.zero);
+
+            protocolReads.Clear();
+            farmingLevelReads.Clear();
+            var observer = new Harmony("Serverbound.Tests.SkillReadCount");
+            try
+            {
+                observer.Patch(AccessTools.Method(typeof(ZDO), "GetInt", new[] { typeof(int), typeof(int) }),
+                    postfix: Hook(nameof(CountProtocolRead)));
+                observer.Patch(AccessTools.Method(typeof(ZDO), "GetFloat", new[] { typeof(int), typeof(float) }),
+                    postfix: Hook(nameof(CountFarmingLevelRead)));
+
+                countSkillReads = true;
+                object?[] args = { plant, null };
+                try { Call("BeginPlant", args); }
+                finally { countSkillReads = false; }
+
+                using ((IDisposable)args[1]!)
+                {
+                    Check(Actor() == boundaryOwner, "plant actor ignored the inclusive range or owner-ID tie-break");
+                    foreach (Player player in new[] { higherOwner, boundaryOwner, lowerLevel })
+                    {
+                        Check(ReadCount(protocolReads, player) == 1, "candidate protocol was read more than once");
+                        Check(ReadCount(farmingLevelReads, player) == 1, "candidate level was read more than once");
+                    }
+                    Check(ReadCount(protocolReads, distant) == 0 && ReadCount(farmingLevelReads, distant) == 0,
+                        "out-of-range player skill state was read");
+                }
+            }
+            finally { observer.UnpatchSelf(); }
+        });
+
+        Case("plant actor selection rejects missing and invalid published skill levels", () =>
+        {
+            (string Name, (float? Level, bool HasZdo)[] Candidates, int ExpectedIndex)[] scenarios =
+            {
+                ("missing ZDO", new (float? Level, bool HasZdo)[] { (null, false) }, -1),
+                ("missing level", new (float? Level, bool HasZdo)[] { (null, true) }, -1),
+                ("NaN level", new (float? Level, bool HasZdo)[] { (float.NaN, true) }, -1),
+                ("positive infinity", new (float? Level, bool HasZdo)[] { (float.PositiveInfinity, true) }, -1),
+                ("negative infinity", new (float? Level, bool HasZdo)[] { (float.NegativeInfinity, true) }, -1),
+                ("negative level", new (float? Level, bool HasZdo)[] { (-1f, true) }, -1),
+                ("zero level", new (float? Level, bool HasZdo)[] { (0f, true) }, 0),
+                ("invalid snapshots before a valid candidate", new (float? Level, bool HasZdo)[]
+                {
+                    (null, false), (float.NaN, true), (-1f, true), (40f, true)
+                }, 3),
+                ("over-100 level wins", new (float? Level, bool HasZdo)[] { (100f, true), (150f, true) }, 1),
+                ("all invalid snapshots", new (float? Level, bool HasZdo)[]
+                {
+                    (null, false), (null, true), (float.NaN, true), (float.PositiveInfinity, true),
+                    (float.NegativeInfinity, true), (-1f, true)
+                }, -1)
+            };
+
+            FieldInfo playerListField = AccessTools.Field(typeof(Player), "s_players");
+            List<Player>? previousPlayers = (List<Player>?)playerListField.GetValue(null);
+            try
+            {
+                int scenarioIndex = 0;
+                foreach (var scenario in scenarios)
+                {
+                    var players = new List<Player>();
+                    for (int candidateIndex = 0; candidateIndex < scenario.Candidates.Length; candidateIndex++)
+                    {
+                        (float? level, bool hasZdo) = scenario.Candidates[candidateIndex];
+                        Player candidate = NewPlayer(300 + scenarioIndex * 10 + candidateIndex, 0);
+                        if (!hasZdo) AccessTools.Field(typeof(Character), "m_nview").SetValue(candidate, null);
+                        else if (level.HasValue) Set(View(candidate).GetZDO(), "Serverbound.level.farming", level.Value);
+                        Position(candidate, Vector3.zero);
+                        players.Add(candidate);
+                    }
+
+                    playerListField.SetValue(null, players);
+                    Plant plant = Fake<Plant>();
+                    Position(plant, Vector3.zero);
+                    object?[] args = { plant, null };
+                    Call("BeginPlant", args);
+
+                    Player? expected = scenario.ExpectedIndex < 0 ? null : players[scenario.ExpectedIndex];
+                    using ((IDisposable)args[1]!)
+                        Check(Actor() == expected, $"plant selection mishandled {scenario.Name}");
+
+                    scenarioIndex++;
+                }
+            }
+            finally { playerListField.SetValue(null, previousPlayers); }
+        });
+
         Case("keeps over-100 levels and the game's clamped Voyaging factor with either upstream cap setting", () =>
         {
             Player player = Levels(NewPlayer(159, 0), 0, 0, 150);
@@ -328,6 +457,26 @@ internal static class ServerSkillTests
     private static HarmonyMethod Hook(string name) => new HarmonyMethod(AccessTools.Method(typeof(ServerSkillTests), name));
     private static void Hook(Harmony h, Type t, string name, string prefix) => h.Patch(AccessTools.Method(t, name), prefix: Hook(prefix));
     private static bool Skip() => false;
+
+    private static void CountProtocolRead(ZDO __instance, int __0)
+    {
+        if (countSkillReads && __0 == protocolKey) Increment(protocolReads, __instance);
+    }
+
+    private static void CountFarmingLevelRead(ZDO __instance, int __0)
+    {
+        if (countSkillReads && __0 == farmingLevelKey) Increment(farmingLevelReads, __instance);
+    }
+
+    private static void Increment(Dictionary<ZDO, int> reads, ZDO zdo)
+    {
+        reads.TryGetValue(zdo, out int count);
+        reads[zdo] = count + 1;
+    }
+
+    private static int ReadCount(Dictionary<ZDO, int> reads, Player player) =>
+        reads.TryGetValue(View(player).GetZDO(), out int count) ? count : 0;
+
     private static bool Session(ref long __result) { __result = 100; return false; }
     private static bool Transform(Component __instance, ref Transform __result) { if (!transforms.ContainsKey(__instance)) Position(__instance, Vector3.zero); __result = transforms[__instance]; return false; }
     private static bool ReadPosition(Transform __instance, ref Vector3 __result) { __result = positions[__instance]; return false; }

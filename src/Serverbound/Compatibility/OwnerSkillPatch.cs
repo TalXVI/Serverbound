@@ -403,24 +403,54 @@ namespace Serverbound.Compatibility
         private static bool HasTreeActor() => !Enabled || current != null;
 
         // The vendor checks the owner's local player. A server owner uses the most skilled qualifying player instead.
-        private static bool HasLevel(Player player, Skills.SkillType skill)
+        private static Player? Best(List<Player> players, Skills.SkillType skill, Component? target, float range)
         {
-            try { Level(player, skill); return true; }
-            catch (InvalidOperationException) { return false; }
+            bool checkRange = target != null;
+            Vector3 targetPosition = checkRange ? target!.transform.position : default;
+            float rangeSquared = range * range;
+            int levelKey = LevelKey(skill);
+            Player? best = null;
+            float bestLevel = 0;
+            long bestOwner = 0;
+
+            for (int index = 0; index < players.Count; index++)
+            {
+                Player player = players[index];
+                if (!player) continue;
+                if (checkRange && !((player.transform.position - targetPosition).sqrMagnitude <= rangeSquared)) continue;
+                if (!TryLevel(player, levelKey, out float level)) continue;
+
+                long owner = player.GetOwner();
+                if (best == null || level > bestLevel || (level == bestLevel && owner < bestOwner))
+                {
+                    best = player;
+                    bestLevel = level;
+                    bestOwner = owner;
+                }
+            }
+
+            return best;
         }
-        private static Player? Best(IEnumerable<Player> players, Skills.SkillType skill) => players.Where(p => p && HasLevel(p, skill))
-            .OrderByDescending(p => Level(p, skill)).ThenBy(p => p.GetOwner()).FirstOrDefault();
-        private static IEnumerable<Player> Near(Component target, float range) => Player.GetAllPlayers()
-            .Where(p => (p.transform.position - target.transform.position).sqrMagnitude <= range * range);
+
+        private static bool TryLevel(Player player, int key, out float level)
+        {
+            level = float.NaN;
+            ZDO? zdo = PlayerZdo(player);
+            if (zdo == null || zdo.GetInt(ProtocolKey) != SkillState.Protocol) return false;
+
+            level = zdo.GetFloat(key, float.NaN);
+            return SkillState.ValidLevel(level);
+        }
+
         private static void BeginHive(Beehive __instance, out Scope? __state) =>
-            __state = Enabled ? new Scope(Best(Near(__instance, FlagRange), Animal)) : null;
+            __state = Enabled ? new Scope(Best(Player.GetAllPlayers(), Animal, __instance, FlagRange)) : null;
         private static void BeginPlant(Plant __instance, out Scope? __state) =>
-            __state = Enabled ? new Scope(Best(Near(__instance, FlagRange), Skills.SkillType.Farming)) : null;
+            __state = Enabled ? new Scope(Best(Player.GetAllPlayers(), Skills.SkillType.Farming, __instance, FlagRange)) : null;
         private static void BeginShipDamage(WearNTear __instance, out Scope? __state) =>
             __state = Enabled ? new Scope(Aboard(__instance.GetComponent<Ship>())) : null;
         private static void BeginShipImpact(ImpactEffect __instance, out Scope? __state) =>
             __state = Enabled ? new Scope(Aboard(__instance.GetComponent<Ship>())) : null;
-        private static Player? Aboard(Ship? ship) => ship ? Best(ship.m_players, Voyaging) : null;
+        private static Player? Aboard(Ship? ship) => ship ? Best(ship.m_players, Voyaging, null, 0) : null;
         private static bool OncePerMiningArea(MineRock5 __0, int __2, float __3)
         {
             if ((!server && !coreOnServer) || (server && !Enabled)) return true;

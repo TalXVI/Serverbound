@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Serverbound.Compatibility
 {
@@ -14,8 +13,29 @@ namespace Serverbound.Compatibility
 
         public static T? Closest<T>(IEnumerable<T> players, Func<T, float> squaredDistance,
             Func<T, long> id, float range) where T : class
-            => players.Where(p => squaredDistance(p) <= range * range)
-                .OrderBy(squaredDistance).ThenBy(id).FirstOrDefault();
+        {
+            T? closest = null;
+            float closestDistance = 0;
+            long closestId = 0;
+            float rangeSquared = range * range;
+
+            foreach (T player in players)
+            {
+                float distance = squaredDistance(player);
+                if (!(distance <= rangeSquared) || (closest != null && distance > closestDistance)) continue;
+
+                long playerId = id(player);
+                if (closest == null || distance < closestDistance
+                    || (distance == closestDistance && playerId < closestId))
+                {
+                    closest = player;
+                    closestDistance = distance;
+                    closestId = playerId;
+                }
+            }
+
+            return closest;
+        }
 
         public static float RequireFactor(int protocol, float value)
         {
