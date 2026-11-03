@@ -2,18 +2,18 @@
 
 ## 0.1.21
 
-- Supports ValheimCommunityPatch 0.40.0 while retaining previously supported builds and its shield fixes.
+- Supports ValheimCommunityPatch 0.40.0, including its shield fixes.
 - Lets fully loaded player areas create objects while other players' areas load. Terrain and object-type loading requirements remain enforced.
 - Avoids repeated sector queries for players in the same zone and repeated skill reads when selecting a nearby actor.
 
 ## 0.1.20
 
-- Supports Valheim 1.0.21 Windows clients and Windows/Linux dedicated servers, and ValheimCommunityPatch 0.39.1. Earlier supported builds remain supported.
+- Supports Valheim 1.0.21 Windows clients and Windows/Linux dedicated servers, and ValheimCommunityPatch 0.39.1.
 - Stops reporting false warnings for absent optional Core hooks. Required patch checks remain in place.
 
 ## 0.1.19
 
-- Supports ValheimCommunityPatch 0.39.0 while retaining previously supported builds.
+- Supports ValheimCommunityPatch 0.39.0.
 - Saves local portal changes in the portal save chunk, including when the community patch handles received changes.
 - Validates ship-control grants against the sending owner and the ready player aboard the ship.
 - Disables simulation when a required Core rewrite fails, including after another mod repatches it.
@@ -21,11 +21,11 @@
 
 ## 0.1.18
 
-- Supports ImpactfulSkills 0.26.0 while retaining previously supported builds. Owner-side skill bonuses keep their existing behavior.
+- Supports ImpactfulSkills 0.26.0. Owner-side skill bonuses keep their existing behavior.
 
 ## 0.1.17
 
-- Supports ValheimCommunityPatch 0.38.0. Dedicated simulation retains the existing object-management takeover and Love Potion spawning correction. Previously supported builds remain supported.
+- Supports ValheimCommunityPatch 0.38.0. Dedicated simulation retains the existing object-management takeover and Love Potion spawning correction.
 
 ## 0.1.16
 
@@ -34,7 +34,7 @@
 
 ## 0.1.15
 
-- Supports ImpactfulSkills 0.25.0 while retaining previously supported builds. Mining, woodcutting, loot, plant, beehive, and boat bonuses still use the player's own skill. 0.25.0 handles taming speed and taming XP itself, so Serverbound no longer touches that code.
+- Supports ImpactfulSkills 0.25.0. Mining, woodcutting, loot, plant, beehive, and boat bonuses still use the player's own skill. 0.25.0 handles taming speed and taming XP itself, so Serverbound no longer touches that code.
 
 ## 0.1.14
 
@@ -48,7 +48,7 @@
 
 ## 0.1.12
 
-- Supports ValheimCommunityPatch 0.37.0 and ImpactfulSkills 0.24.0 while retaining previously supported builds.
+- Supports ValheimCommunityPatch 0.37.0 and ImpactfulSkills 0.24.0.
 - Runs VCP's Love Potion spawn correction on the dedicated server when server simulation is active, preserving its configuration and existing vendor registrations.
 - Lets static objects settle around remote players after terrain changes, so chopping a lowered tree uses its settled position for the stump.
 
@@ -58,11 +58,11 @@
 
 ## 0.1.10
 
-- Supports ValheimCommunityPatch 0.36.1 while retaining the previously supported builds.
+- Supports ValheimCommunityPatch 0.36.1.
 
 ## 0.1.9
 
-- Supports Valheim 1.0.20 Windows clients and dedicated servers and ImpactfulSkills 0.23.0. Previously supported builds remain supported.
+- Supports Valheim 1.0.20 Windows clients and dedicated servers and ImpactfulSkills 0.23.0.
 
 ## 0.1.8
 
@@ -75,7 +75,7 @@
 
 ## 0.1.6
 
-- Supports ValheimCommunityPatch 0.36.0 while retaining the previously supported builds.
+- Supports ValheimCommunityPatch 0.36.0.
 
 ## 0.1.5
 
@@ -83,19 +83,19 @@
 
 ## 0.1.4
 
-- Supports ImpactfulSkills 0.22.0 and 0.22.1, plus ValheimCommunityPatch 0.35.1. Previously supported builds remain accepted.
+- Supports ImpactfulSkills 0.22.0 and 0.22.1, plus ValheimCommunityPatch 0.35.1.
 
 ## 0.1.3
 
-- Adds optional owner-routed customization and turret-mode requests for the audited OdinShip 0.8.7 build.
+- Adds optional owner-routed customization and turret-mode requests for OdinShip 0.8.7.
 - Measures request range from ship controls or the relevant turret and reports owner rename results.
 - Keeps the OdinShip integration active when simulation rolls back. Owner customization and turret permissions retain vendor behavior.
-- Supports ImpactfulSkills 0.21.3 and ValheimCommunityPatch 0.35.0 while retaining the previously supported builds.
+- Supports ImpactfulSkills 0.21.3 and ValheimCommunityPatch 0.35.0.
 - Preserves replicated skill reads through ImpactfulSkills' new bonus-cap helper.
 
 ## 0.1.2
 
-- Supports ImpactfulSkills 0.21.1 while retaining support for 0.21.0.
+- Supports ImpactfulSkills 0.21.1.
 - Preserves StartupAccelerator's deferred configuration saves when removing obsolete settings.
 
 ## 0.1.1
@@ -109,5 +109,4 @@
 - Adds VPO/VCP takeover and the ImpactfulSkills server/client bridge.
 - Fixes VCP detection timing and rejects competing predecessor.
 - Preserves raid transpilers, ready-peer filtering, ship validity checks and dungeon patch ordering.
-- Builds and packages `bin/Release/Serverbound.dll`, records tested source/artifact hashes, and verifies identical bytes after a clean rebuild.
 - Keeps CharacterGuard disabled and ItemLedger off.

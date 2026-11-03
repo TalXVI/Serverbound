@@ -24,7 +24,7 @@ The new assembly and namespace are `Serverbound`; the plugin GUID is `org.server
 
 ## Supported builds
 
-Serverbound accepts audited Valheim 1.0.16, 1.0.17, 1.0.20, and 1.0.21 Windows client and Windows/Linux dedicated assemblies. It rejects unsupported assembly hashes.
+Serverbound accepts Valheim 1.0.16, 1.0.17, 1.0.20, and 1.0.21 Windows client and Windows/Linux dedicated assemblies. It rejects any other build.
 
 ## Verified supported mods
 
@@ -49,7 +49,7 @@ With ComfortTweaks 3.3.11 on Valheim 1.0.20 and 1.0.21 dedicated servers, Server
 
 ### OdinShip
 
-Serverbound integrates with the audited OdinShip 0.8.7 build. Install Serverbound and that OdinShip build on the requesting client and the current ship owner, including the dedicated server when it owns the ship. Check for `OdinShip: APPLIED` in the log.
+Serverbound integrates with OdinShip 0.8.7. Install Serverbound and that OdinShip build on the requesting client and the current ship owner, including the dedicated server when it owns the ship. Check for `OdinShip: APPLIED` in the log.
 
 Nearby clients can request customization and turret-mode changes from the current ship owner. Request range is 8 m from ship controls for customization and rename, or from a ship turret for mode changes. The owner checks access before applying rename and routed requests. Direct owner customization and turret writes retain OdinShip's permissions. Requests do not transfer ship ownership.
 
@@ -86,7 +86,7 @@ Settings are local, are not synchronized, and require a restart. The generated c
 | Networking / Enabled | true | Queue and Steam send-rate settings. Disable when another mod owns these. |
 | Networking / QueueSizeKB | 48 | Per-peer queued world data. Larger queues can increase latency. |
 
-Choose one owner for overlapping networking and simulation settings. Do not copy a pack preset into a standalone installation without checking it.
+Choose one owner for overlapping networking and simulation settings.
 
 ## Troubleshooting
 
