@@ -29,8 +29,6 @@ def main():
     notes = f"""{changes}
 
 Remove predecessor simulation DLLs before installing. ImpactfulSkills participants need matching Serverbound on the client and server. Follow the [upgrade instructions](https://github.com/TalXVI/Serverbound#upgrade).
-
-The attached ZIP contains the tested DLL. candidate.json records source, dependency and artifact hashes and validation evidence. SHA256SUMS records the package and DLL hashes.
 """
     (dist / "release-notes.md").write_text(notes, encoding="utf-8")
     print("Prepared Serverbound " + data["version"] + " release notes. No external action performed.")

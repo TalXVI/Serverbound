@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.22
+
+- Supports ValheimCommunityPatch 0.41.0.
+
 ## 0.1.21
 
 - Supports ValheimCommunityPatch 0.40.0, including its shield fixes.
