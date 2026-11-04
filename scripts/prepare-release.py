@@ -26,10 +26,7 @@ def main():
     subprocess.run([sys.executable, "-B", str(ROOT / "scripts/verify-release.py"),
                     str(archive), str(dist / "candidate.json")], cwd=ROOT, check=True)
     changes = release_changes((ROOT / "CHANGELOG.md").read_text(encoding="utf-8"), data["version"])
-    notes = f"""{changes}
-
-Remove predecessor simulation DLLs before installing. ImpactfulSkills participants need matching Serverbound on the client and server. Follow the [upgrade instructions](https://github.com/TalXVI/Serverbound#upgrade).
-"""
+    notes = changes + "\n"
     (dist / "release-notes.md").write_text(notes, encoding="utf-8")
     print("Prepared Serverbound " + data["version"] + " release notes. No external action performed.")
 

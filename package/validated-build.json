@@ -25,7 +25,7 @@
     "scripts/build-and-test.py": "14fa4d717ac975aba7bf2532dcdc4e3ffb1823f7de55ebbd40f5b988aa0da4c4",
     "scripts/candidate.py": "dd3c8c8dbbf2bd6855106999f16230ea9e4237d5e0ee62dee9d3daefa2b50fdb",
     "scripts/package.py": "1d23a075015cf1c5046dd858a9d915c076c8f02bb39ac25497021c2c0ba2dd2c",
-    "scripts/prepare-release.py": "d152353ccadcd0da22913c5e5ddc1d6e743d99e6a2bd71ce35833d787c0f8734",
+    "scripts/prepare-release.py": "e643fee282f5655dd21a55ee02e960693d9a985bc0d93a73840605e1d43b8b34",
     "scripts/publish-thunderstore.py": "3e7cb20d06a5209439ff0a4853af49db480e7215c31e00a5bab65f29824e39ae",
     "scripts/release.py": "9e90370fca3faca1b50e4cccacb7bc78c6fa25260f4987fc01cccf069f271d91",
     "scripts/smoke.py": "34f5940b0aa7303a878dc03546eb71bf07fbc66c3867a9f113379830d7f5d53e",
@@ -91,7 +91,7 @@
     "tests/Serverbound.Tests/VcpSpawnTests.cs": "490e06c2c9356a5789cb9be0752ce8c229960860d8820409ded7b7ff69501e43",
     "tests/Serverbound.Tests/packages.lock.json": "0418756634a2618a964b98cbd036d46b22f0c40bf287f12b80d623ebabb6c958"
   },
-  "sourceSha256": "bae299524c120c8afbfc24f50afd7cb9e441ae68410fc43b4e7a690d3a0ff236",
+  "sourceSha256": "9941e67fe9c62dd9ff3576866995a01efb1ef1ee8a132ff0eaf3aa6fad6063c3",
   "dllSha256": "1490eda4246d3e6ea48417062a407f081a6360585eac5917f7d8e4a76c885c71",
   "inputs": {
     "client/Managed/Assembly-CSharp.dll": "c9914a5834a7cd7d3cefc98d436976ab6d37d879d5c00d610b13dbb4401a270c",
