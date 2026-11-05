@@ -38,14 +38,6 @@ namespace Serverbound.Compatibility
             if (present == hooks.Length) return;
             if (present != 0) throw new NotSupportedException("VCP spawning hooks are only partly installed.");
 
-            Type registry = Guard.Type(vcp, "ValheimCommunityPatch.FixRegistry");
-            Type entryType = Guard.Type(vcp, "ValheimCommunityPatch.FixRegistry+Entry");
-            object entry = Guard.Method(registry, "Get", entryType, typeof(Type)).Invoke(null, new object[] { group });
-            FieldInfo outcome = AccessTools.Field(entryType, "Outcome");
-            object gate = AccessTools.Field(registry, "Gate").GetValue(null);
-            object previous;
-            lock (gate) previous = outcome.GetValue(entry);
-            restoreRegistry = () => { lock (gate) outcome.SetValue(entry, previous); };
             new Harmony(Owner).CreateClassProcessor(group).Patch();
             foreach (var hook in hooks)
             {
@@ -53,7 +45,7 @@ namespace Serverbound.Compatibility
                 if (matches.Length != 1 || matches[0].owner != Owner || !Kind(hook.Target, hook.Kind).Contains(matches[0]))
                     throw new InvalidOperationException("VCP spawning hook did not install: " + Guard.Name(hook.Hook));
             }
-            Guard.Method(registry, "RecordPatched", typeof(void), typeof(Type), typeof(bool)).Invoke(null, new object[] { group, true });
+            restoreRegistry = VcpFixRegistry.MarkApplied(vcp, group);
             CompatibilityInstaller.Info("VCP.Spawning: APPLIED; vendor pheromone logic follows dedicated spawning and retains its config.");
         }
 

@@ -23,6 +23,7 @@ namespace Serverbound.Compatibility
 
         internal static void Prepare(Func<string, Assembly?> resolve)
         {
+            VcpBaseSpawnsPatch.Reset();
             VcpSpawningPatch.Reset();
             Active = false;
             vpo = resolve(VpoGuid); vcp = resolve(VcpGuid);
@@ -121,7 +122,11 @@ namespace Serverbound.Compatibility
                     CompatibilityInstaller.Info("Simulation: registered Serverbound's VCP takeover after chainloading.");
                 }
                 if (!CoreActive()) throw new InvalidOperationException("Core changed during integration.");
-                if (vcp != null) VcpSpawningPatch.Install(vcp);
+                if (vcp != null)
+                {
+                    VcpSpawningPatch.Install(vcp);
+                    VcpBaseSpawnsPatch.Install(vcp);
+                }
                 takenOver.AddRange(removed);
                 Active = true;
                 CompatibilityInstaller.Info($"Simulation: APPLIED; removed {removed.Count} exact server-side VPO/VCP hooks; Core retained.");
@@ -148,8 +153,11 @@ namespace Serverbound.Compatibility
 
         internal static void RestoreVendors()
         {
-            VcpSpawningPatch.Reset();
             var failures = new List<Exception>();
+            try { VcpBaseSpawnsPatch.Reset(); }
+            catch (Exception failure) { failures.Add(failure); }
+            try { VcpSpawningPatch.Reset(); }
+            catch (Exception failure) { failures.Add(failure); }
             foreach (var hook in takenOver)
             {
                 try { Restore(hook); }

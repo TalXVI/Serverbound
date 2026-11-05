@@ -69,7 +69,7 @@ internal static class VcpSpawnTests
                 fixture.Patch(AccessTools.DeclaredMethod(typeof(SpawnSystem), "UpdateSpawnList"), prefix: new HarmonyMethod(typeof(VcpSpawnTests), nameof(Spawn)) { priority = Priority.Last });
 
                 var spawner = new SpawnSystem.SpawnData { m_prefab = effect.m_pheromoneTarget, m_spawnChance = 100f, m_maxSpawned = 1, m_minLevel = 1, m_maxLevel = 2 };
-                Start(core, vendor, vcp);
+                Start(core, vendor, vcp, errors.Add);
                 Check(errors.Count == 0, string.Join("\n", errors));
                 RunSpawn(spawner);
                 Check(chance == 100f && count == 2 && min == 2 && max == 3 && level == 20f,
@@ -88,7 +88,7 @@ internal static class VcpSpawnTests
 
                 // VCP can already own these hooks when Patch Every Side is enabled.
                 vendor.CreateClassProcessor(group).Patch();
-                Start(core, vendor, vcp); RunSpawn(spawner);
+                Start(core, vendor, vcp, errors.Add); RunSpawn(spawner);
                 Check(errors.SequenceEqual(new[] { "Simulation: DISABLED; resolve the rejected integration before admitting players." })
                     && level == 20f, "existing vendor hooks were rejected or duplicated");
                 Plugin.DisableSimulation(); RunSpawn(spawner);
@@ -109,14 +109,14 @@ internal static class VcpSpawnTests
         });
     }
 
-    private static void Start(Harmony core, Harmony vendor, Assembly vcp)
+    internal static void Start(Harmony core, Harmony vendor, Assembly vcp, Action<string> error)
     {
         foreach (Type type in new[] { typeof(Serverbound.Features.Core.CreateDestroyObjects_Patch), typeof(Serverbound.Features.Core.ZDOMan_ReleaseNearbyZDOS_Patch), typeof(Serverbound.Features.Core.ZoneSystem_Update_Patch) })
             core.CreateClassProcessor(type).Patch();
         Type idle = vcp.GetType("ValheimCommunityPatch.Patches.Performance.SceneIdleSkipPatch", true)!;
         if (!Harmony.GetPatchInfo(AccessTools.DeclaredMethod(typeof(ZNetScene), "CreateDestroyObjects")).Owners.Contains(Vendor))
             vendor.Patch(AccessTools.DeclaredMethod(typeof(ZNetScene), "CreateDestroyObjects"), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(idle, "CreateDestroyObjectsPrefix")), postfix: new HarmonyMethod(AccessTools.DeclaredMethod(idle, "CreateDestroyObjectsPostfix")));
-        CompatibilityInstaller.Install(guid => guid == Vendor ? vcp : null, _ => { }, _ => { }, errors.Add, installOwnerSkills: false, dedicated: true);
+        CompatibilityInstaller.Install(guid => guid == Vendor ? vcp : null, _ => { }, _ => { }, error, installOwnerSkills: false, dedicated: true);
         CompatibilityInstaller.Verify();
     }
     private static void RunSpawn(SpawnSystem.SpawnData spawner) =>
