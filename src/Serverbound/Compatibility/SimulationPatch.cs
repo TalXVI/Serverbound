@@ -17,7 +17,8 @@ namespace Serverbound.Compatibility
         private static readonly string[] VpoHashes =
         {
             "614CD643343E2E2D182BA4B50AA8C96D8FEDB8E09A16C6AA0018BAD222D6EE70",
-            "5BC06CD13EECAFDE08384DD1DB6B3B56073B93E9EF2F6CB3835782B305E19AC7"
+            "5BC06CD13EECAFDE08384DD1DB6B3B56073B93E9EF2F6CB3835782B305E19AC7",
+            "E7F44265DA04E5809530F1212980DB23BB00645CA51BD2B45907CBDAD82B4F1F"
         };
         private static Assembly? vpo, vcp;
         private static readonly List<(MethodBase Target, Patch Hook, HarmonyPatchType Kind)> takenOver = new List<(MethodBase, Patch, HarmonyPatchType)>();

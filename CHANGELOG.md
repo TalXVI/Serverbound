@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.25
+
+- Supports ValheimCommunityPatch 0.43.0.
+- Supports ValheimPerformanceOptimizations 2.0.1 on Valheim 1.0.21.
+
 ## 0.1.24
 
 - Supports ValheimPerformanceOptimizations 2.0.0 on Valheim 1.0.21.

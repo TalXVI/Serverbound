@@ -30,8 +30,8 @@ Serverbound accepts Valheim 1.0.16, 1.0.17, 1.0.20, and 1.0.21 Windows client an
 
 | Mod | Verified version |
 |---|---|
-| ValheimPerformanceOptimizations | 1.2.3; 2.0.0 on Valheim 1.0.21 |
-| ValheimCommunityPatch | 0.34.1, 0.35.0, 0.35.1, 0.36.0, 0.36.1, 0.37.0, 0.38.0, 0.39.0, 0.39.1, 0.40.0, 0.41.0, 0.42.0 |
+| ValheimPerformanceOptimizations | 1.2.3; 2.0.0 and 2.0.1 on Valheim 1.0.21 |
+| ValheimCommunityPatch | 0.34.1, 0.35.0, 0.35.1, 0.36.0, 0.36.1, 0.37.0, 0.38.0, 0.39.0, 0.39.1, 0.40.0, 0.41.0, 0.42.0, 0.43.0 |
 | ImpactfulSkills | 0.21.0, 0.21.1, 0.21.3, 0.22.0, 0.22.1, 0.23.0, 0.24.0, 0.25.0, 0.26.0 |
 | ValheimTune | 0.7.9, 0.7.10 |
 | Heightmap Unlimited JvL | 2.0.2 |
@@ -43,7 +43,7 @@ Serverbound accepts Valheim 1.0.16, 1.0.17, 1.0.20, and 1.0.21 Windows client an
 
 With VCP 0.37.0 and newer supported builds, Serverbound runs VCP's Love Potion spawn fix on the dedicated server. It uses the potion status published by clients running VCP and retains the vendor's configuration. A player without published status receives the base spawn behavior.
 
-With VCP 0.42.0, Serverbound uses VCP's unloaded-base check during dedicated spawning and respects its `Fix Spawns Inside Bases` setting. That check uses prefab collider sizes. Upgraded stations and other runtime range changes can extend beyond the area it checks until those objects load.
+With VCP 0.42.0 and newer supported builds, Serverbound uses VCP's unloaded-base check during dedicated spawning and respects its `Fix Spawns Inside Bases` setting. That check uses prefab collider sizes. Upgraded stations and other runtime range changes can extend beyond the area it checks until those objects load.
 
 ### ComfortTweaks portals
 
