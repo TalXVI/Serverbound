@@ -4,15 +4,26 @@ import json
 from pathlib import Path
 import runpy
 import subprocess
+import sys
 import tempfile
 import unittest
+from unittest import mock
 import zipfile
-from candidate import ROOT, compat_record, sha, sources
+from candidate import ROOT, committed_sources, compat_record, sha, sources
+from smoke import vpo_burst_ready
 
 validation = runpy.run_path(str(ROOT / "scripts/verify-release.py"))
 verify_archive = validation["verify_archive"]
 DLL_MEMBER = validation["DLL_MEMBER"]
 release_changes = runpy.run_path(str(ROOT / "scripts/prepare-release.py"))["release_changes"]
+
+
+class StartupGateTests(unittest.TestCase):
+    def test_vpo_native_gate_accepts_both_verified_successes_only(self):
+        self.assertTrue(vpo_burst_ready("VPO.Burst: APPLIED; Windows dedicated native library loaded and Burst probe passed."))
+        self.assertTrue(vpo_burst_ready("VPO.Burst: fixed upstream; Windows dedicated native library loaded and Burst probe passed; inactive."))
+        self.assertFalse(vpo_burst_ready("VPO.Burst: Windows dedicated-only patch; inactive."))
+        self.assertFalse(vpo_burst_ready("VPO.Burst: NOT APPLIED; required Windows dedicated launch gate failed."))
 
 
 class ReleaseTests(unittest.TestCase):
@@ -65,6 +76,41 @@ class ReleaseTests(unittest.TestCase):
 
     def verify(self, data=None, tag="v0.1.0"):
         verify_archive(self.archive, self.data if data is None else data, self.root, tag)
+
+    def test_release_rejects_source_bytes_normalized_at_commit(self):
+        self.write(".gitattributes", b"* text eol=lf\n")
+        self.write("source.cs", b"class Fixture {}\r\n")
+        files = sources(self.root)
+        self.approved["sourceFiles"] = files
+        self.approved["sourceSha256"] = sha(json.dumps(files, sort_keys=True).encode())
+        self.write("package/validated-build.json", json.dumps(self.approved).encode())
+        self.git("add", ".")
+        self.git("commit", "--quiet", "-m", "Commit normalized fixture")
+        self.git("branch", "-M", "main")
+        remote = self.root / ".git" / "fixture-remote.git"
+        subprocess.run(["git", "init", "--bare", "--quiet", str(remote)], check=True)
+        self.git("remote", "add", "origin", str(remote))
+        self.git("push", "--quiet", "-u", "origin", "main")
+        self.assertEqual(self.git("status", "--porcelain"), "")
+        self.assertEqual(sources(self.root), self.approved["sourceFiles"])
+        self.assertNotEqual(committed_sources(self.root, "HEAD"), self.approved["sourceFiles"])
+
+        class Commands:
+            DEVNULL = subprocess.DEVNULL
+            check_output = staticmethod(subprocess.check_output)
+
+            @staticmethod
+            def run(command, **kwargs):
+                if command[:3] == ["gh-fixture", "release", "view"]:
+                    return subprocess.CompletedProcess(command, 1)
+                raise AssertionError("Release reached the build or publication step")
+
+        release = runpy.run_path(str(ROOT / "scripts/release.py"))["main"]
+        fake_shutil = type("Tools", (), {"which": staticmethod(lambda _: "gh-fixture")})
+        with mock.patch.dict(release.__globals__, {"ROOT": self.root, "shutil": fake_shutil, "subprocess": Commands}), \
+                mock.patch.object(sys, "argv", ["release.py"]):
+            with self.assertRaisesRegex(SystemExit, "Committed source"):
+                release()
 
     def test_valid_release_and_committed_record(self):
         self.verify()

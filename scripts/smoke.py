@@ -11,6 +11,13 @@ import subprocess
 import time
 from tooling import ROOT, configured_directory, require
 
+
+def vpo_burst_ready(contents):
+    return any(status in contents for status in (
+        "VPO.Burst: APPLIED; Windows dedicated native library loaded and Burst probe passed.",
+        "VPO.Burst: fixed upstream; Windows dedicated native library loaded and Burst probe passed; inactive."))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     modes = parser.add_mutually_exclusive_group()
@@ -92,7 +99,7 @@ def main():
     if args.vcp:
         gates += ["Removed ValheimCommunityPatch's spawn queue", "Removed ValheimCommunityPatch's zone-diff unload"]
     if args.profile:
-        gates += ["OwnerSkills: APPLIED", "VPO.Burst: APPLIED", "Removed ValheimCommunityPatch's spawn queue", "Removed ValheimCommunityPatch's zone-diff unload"]
+        gates += ["OwnerSkills: APPLIED", "Removed ValheimCommunityPatch's spawn queue", "Removed ValheimCommunityPatch's zone-diff unload"]
         if any(plugins.rglob("OdinShip.dll")):
             gates += ["OdinShip: APPLIED", "OdinShip.Core: APPLIED", "OdinShip.FishPress: APPLIED",
                       "OdinShip.Input: client-only; inactive on dedicated server."]
@@ -108,7 +115,8 @@ def main():
             while process.poll() is None and time.monotonic() < deadline:
                 log = bepinex / "LogOutput.log"
                 contents = log.read_text(encoding="utf-8",errors="replace") if log.exists() else ""
-                if save_position is None and all(gate in contents for gate in gates) and "Game server connected" in contents:
+                if (save_position is None and (not args.profile or vpo_burst_ready(contents))
+                        and all(gate in contents for gate in gates) and "Game server connected" in contents):
                     save_position = (runtime / "unity.log").stat().st_size
                     process.stdin.write("save\n"); process.stdin.flush()
                 if save_position is not None:

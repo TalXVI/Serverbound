@@ -4,7 +4,7 @@ import json
 import shutil
 import subprocess
 import sys
-from candidate import ROOT
+from candidate import ROOT, committed_sources
 from tooling import require
 
 
@@ -25,6 +25,10 @@ def main():
     git("fetch", "--quiet", "origin", "main")
     commit = git("rev-parse", "HEAD")
     require(commit == git("rev-parse", "origin/main"), "Push main before releasing")
+    approved = json.loads((ROOT / "package/validated-build.json").read_text())
+    require(committed_sources(ROOT, commit) == approved["sourceFiles"],
+            "Committed source bytes differ from the validated files. Check line endings before releasing.")
+
     version = json.loads((ROOT / "package/manifest.json").read_text())["version_number"]
     tag = "v" + version
     remote_tag = git("ls-remote", "--tags", "origin", "refs/tags/" + tag)

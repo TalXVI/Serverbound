@@ -14,7 +14,11 @@ namespace Serverbound.Compatibility
         private const string CompatOwner = ServerboundGuid + "." + nameof(VcpObjectPassPatch);
         private const string VpoGuid = "dev.ontrigger.vpo";
         private const string VcpGuid = "MidnightsFX.ValheimCommunityPatch";
-        private const string VpoHash = "614CD643343E2E2D182BA4B50AA8C96D8FEDB8E09A16C6AA0018BAD222D6EE70";
+        private static readonly string[] VpoHashes =
+        {
+            "614CD643343E2E2D182BA4B50AA8C96D8FEDB8E09A16C6AA0018BAD222D6EE70",
+            "5BC06CD13EECAFDE08384DD1DB6B3B56073B93E9EF2F6CB3835782B305E19AC7"
+        };
         private static Assembly? vpo, vcp;
         private static readonly List<(MethodBase Target, Patch Hook, HarmonyPatchType Kind)> takenOver = new List<(MethodBase, Patch, HarmonyPatchType)>();
         private static bool pending;
@@ -73,7 +77,7 @@ namespace Serverbound.Compatibility
                 (MethodInfo Target, MethodInfo Hook)? missingCompat = null;
                 if (vpo != null)
                 {
-                    Guard.Build(vpo, VpoHash);
+                    Guard.Build(vpo, VpoHashes);
                     Type group = Guard.Type(vpo, "ValheimPerformanceOptimizations.Patches.ObjectManagement.ZNetSceneObjectManagementPatch");
                     Type release = Guard.Type(vpo, "ValheimPerformanceOptimizations.Patches.ObjectManagement.ZDOManReleaseNearbyPatch");
                     foreach ((Type targetType, string target, string method, HarmonyPatchType kind) in new[]
