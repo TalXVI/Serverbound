@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.27
+
+- Supports ValheimCommunityPatch 0.45.0.
+
 ## 0.1.26
 
 - Supports ValheimCommunityPatch 0.43.1.
