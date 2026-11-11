@@ -103,6 +103,31 @@ internal static class SimulationTests
             var spawnCodes = (IEnumerable<CodeInstruction>)spawnRewrite.Invoke(null, new object[] { PatchProcessor.GetOriginalInstructions(spawnTarget), spawnTarget });
             Check(spawnCodes.Any(c => c.Calls(AccessTools.Method(typeof(Serverbound.Features.Core), "GetCurrentSpawners"))), "spawner retained local-player dependency");
         });
+        if (vpo.GetName().Version >= new System.Version(2, 2, 0, 0)) Case("keeps VPO spawning cache with the server spawner rewrite", () =>
+        {
+            Plugin.logger = new BepInEx.Logging.ManualLogSource("offline Serverbound");
+            var vendor = new Harmony("dev.ontrigger.vpo");
+            MethodInfo update = AccessTools.Method(typeof(SpawnSystem), "UpdateSpawning");
+            MethodInfo list = AccessTools.Method(typeof(SpawnSystem), "UpdateSpawnList");
+            Type spawnCache = vpo.GetType("ValheimPerformanceOptimizations.Patches.SpawnSystemSectorObjectsPatch", true)!;
+            Type profiler = vpo.GetType("ValheimPerformanceOptimizations.Patches.MonoUpdatersProfilerPatch", true)!;
+            vendor.PatchAll(spawnCache);
+            vendor.Patch(update, transpiler: new HarmonyMethod(AccessTools.Method(profiler, "SpawnSystemUpdateSpawningTranspiler")));
+            vendor.Patch(list, transpiler: new HarmonyMethod(AccessTools.Method(profiler, "SpawnSystemUpdateSpawnListTranspiler")));
+            new Harmony(Core).PatchAll(typeof(Serverbound.Features.Core.SpawnSystem_UpdateSpawning_Patch));
+
+            // Inspect the composed rewrites; this fixture does not execute a Unity scene.
+            var updateCodes = PatchProcessor.GetCurrentInstructions(update);
+            var listCodes = PatchProcessor.GetCurrentInstructions(list);
+            MethodInfo serverSpawners = ((Func<RandEventSystem, SpawnSystem, List<SpawnSystem.SpawnData>>)Serverbound.Features.Core.GetCurrentSpawners).Method;
+            Check(updateCodes.Any(c => c.Calls(serverSpawners)),
+                "VPO displaced the server event-spawner rewrite");
+            Check(!updateCodes.Any(c => c.Calls(AccessTools.Method(typeof(RandEventSystem), "GetCurrentSpawners"))),
+                "local event-spawner call remains");
+            Check(listCodes.Any(c => c.Calls(AccessTools.Method(spawnCache, "FindSectorObjectsCached")))
+                && listCodes.Any(c => c.Calls(AccessTools.Method(spawnCache, "GetNrOfZDOInstancesCached"))),
+                "VPO's sector or count cache was displaced");
+        });
         Case("Core absent leaves all client-oriented vendor hooks intact", () =>
         {
             RegisterVendors(); string[] before = Snapshot(); Prepare(); Call(simulation, "Verify");
